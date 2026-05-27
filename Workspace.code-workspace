@@ -4,5 +4,24 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"sqltools.connections": [
+			{
+				"pgOptions": {
+					"ssl": {
+						"rejectUnauthorized": true
+					}
+				},
+				"ssh": "Disabled",
+				"previewLimit": 50,
+				"server": "ep-hidden-rain-alw3hfaz-pooler.c-3.eu-central-1.aws.neon.tech",
+				"port": 5432,
+				"driver": "PostgreSQL",
+				"name": "PizzaBI",
+				"database": "pizzabi",
+				"username": "app_user",
+				"password": "npg_HUPyaEAe9V5L"
+			}
+		]
+	}
 }
