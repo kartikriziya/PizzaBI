@@ -49,6 +49,28 @@ export async function getColumnTypes(tableName) {
   return map
 }
 
+/**
+ * Fetches all FK constraints on the given table.
+ * Returns an array of { constraintName, definition } so we can drop and re-add them.
+ */
+async function getForeignKeys(client, tableName) {
+  const result = await client.query(
+    `SELECT
+       tc.constraint_name,
+       pg_get_constraintdef(c.oid) AS definition
+     FROM information_schema.table_constraints tc
+     JOIN pg_constraint c ON c.conname = tc.constraint_name
+     WHERE tc.table_schema = 'public'
+       AND tc.table_name   = $1
+       AND tc.constraint_type = 'FOREIGN KEY'`,
+    [tableName],
+  )
+  return result.rows.map((r) => ({
+    constraintName: r.constraint_name,
+    definition: r.definition,
+  }))
+}
+
 // ── Core service functions ────────────────────────────────────────────────────
 
 /**
@@ -81,7 +103,8 @@ export async function previewFiles(uploadedFiles) {
 /**
  * Imports confirmed files into PostgreSQL.
  * - Runs inside a single transaction (all succeed or all roll back)
- * - Disables FK checks so upload order doesn't matter
+ * - For each table: drops its FK constraints, imports data, re-adds them
+ *   so upload order doesn't matter and no superuser privilege is needed
  * - Deletes existing rows before inserting if the table already exists
  * - Creates the table automatically if it doesn't exist yet
  * - Inserts rows in batches of 500 for performance
@@ -93,9 +116,6 @@ export async function importFiles(confirmedFiles) {
 
   try {
     await client.query("BEGIN")
-    // Disable FK trigger checks so upload order doesn't matter.
-    // Requires the DB user to have SUPERUSER or REPLICATION privilege.
-    await client.query("SET session_replication_role = replica")
 
     for (const { tempPath, tableName, filename } of confirmedFiles) {
       if (!fs.existsSync(tempPath)) {
@@ -106,6 +126,14 @@ export async function importFiles(confirmedFiles) {
 
       const { columns, rows } = await parseCsv(tempPath)
       const exists = await tableExists(tableName)
+
+      // Drop FK constraints before touching data so insert order doesn't matter
+      const foreignKeys = exists ? await getForeignKeys(client, tableName) : []
+      for (const fk of foreignKeys) {
+        await client.query(
+          `ALTER TABLE "${tableName}" DROP CONSTRAINT "${fk.constraintName}"`,
+        )
+      }
 
       if (exists) {
         await client.query(`DELETE FROM "${tableName}"`)
@@ -146,6 +174,13 @@ export async function importFiles(confirmedFiles) {
         inserted += batch.length
       }
 
+      // Restore FK constraints now that data is in place
+      for (const fk of foreignKeys) {
+        await client.query(
+          `ALTER TABLE "${tableName}" ADD CONSTRAINT "${fk.constraintName}" ${fk.definition}`,
+        )
+      }
+
       results.push({
         filename,
         tableName,
@@ -156,13 +191,11 @@ export async function importFiles(confirmedFiles) {
     }
 
     await client.query("COMMIT")
-    await client.query("SET session_replication_role = DEFAULT")
     return results
   } catch (err) {
     await client.query("ROLLBACK")
-    await client.query("SET session_replication_role = DEFAULT")
     for (const { tempPath } of confirmedFiles) fs.unlink(tempPath, () => {})
-    throw err // let the route handler return the error response
+    throw err
   } finally {
     client.release()
   }

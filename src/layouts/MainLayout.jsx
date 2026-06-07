@@ -28,7 +28,7 @@ export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
           to="/statistics"
         />
         <SidebarItem
-          icon={<Upload size={5} />}
+          icon={<Upload size={20} />}
           text="Upload File"
           to="/upload"
         />
