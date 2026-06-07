@@ -1,2 +1,54 @@
-/* Please dont removet his Import otherwise Tailwind won't work! */
-@import "tailwindcss";
+@import "tailwindcss"; /* Please dont removet his Import otherwise Tailwind won't work! */
+
+@theme {
+  /* ==========================================================================
+     DEFAULT / DARK MODE PALETTE
+     These serve as your base tokens across the entire application.
+     ========================================================================== */
+
+  /* Deep charcoal background for dark mode dashboard canvas */
+  --color-pizzabi-main: #0b111e;
+  /* Slightly lighter slate container/card background for dark mode */
+  --color-pizzabi-card: #111827;
+
+  /* BRAND ACCENTS & UI STATUS COLORS */
+  /* Primary PizzaBI brand color - used for accents, branding, and major highlights */
+  --color-pizzabi-gold: #ff9f1c;
+  /* Tomato red - used for alert/negative states, main line trends, and active nodes */
+  --color-pizzabi-red: #e63946;
+  /* Basil green - used for positive trend metrics (+18.6%) and success states */
+  --color-pizzabi-green: #4caf50;
+
+  /* SECONDARY DATA GRAPH / UTILITY COLORS */
+  /* Warm secondary data color - used for alternative charts or stacked bars */
+  --color-pizzabi-amber: #f4a261;
+  /* Cool muted teal data color - used for lower-priority category segments */
+  --color-pizzabi-teal: #3a868f;
+  /* Slate gray - used for secondary text, metadata, descriptions, and axis lines */
+  --color-pizzabi-muted: #9ca3af;
+}
+
+/* ==========================================================================
+   LIGHT MODE OVERRIDES
+   Activates automatically if a .light class is added to the wrapper root.
+   ========================================================================== */
+@utility light {
+  /* Soft, bright background to ease eye strain while keeping a premium feel */
+  --color-pizzabi-main: #f8fafc;
+  /* Pure white container cards to lift charts cleanly off the main background */
+  --color-pizzabi-card: #ffffff;
+
+  /* Slightly deepened orange/gold to maintain strong contrast against white backgrounds */
+  --color-pizzabi-gold: #e67e00;
+  /* Richer tomato red so text and lines remain perfectly legible on light cards */
+  --color-pizzabi-red: #d92b38;
+  /* Slightly darker forest/basil green for accessible contrast check compliance */
+  --color-pizzabi-green: #2e7d32;
+
+  /* Sunburned amber shade modified for crisp visibility against light backgrounds */
+  --color-pizzabi-amber: #e0823c;
+  /* Deepened teal/ocean shade for clear visualization categorization */
+  --color-pizzabi-teal: #28666e;
+  /* Darker charcoal-gray text color for highly readable secondary body/labels */
+  --color-pizzabi-muted: #64748b;
+}
