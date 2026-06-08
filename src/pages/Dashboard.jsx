@@ -1,6 +1,7 @@
 import React from "react"
 import PizzaSalesHeader from "../components/Header"
 import PizzaSalesCharts from "../components/PizzaSalesCharts"
+import Charts from "../components/Charts"
 
 export default function Dashboard() {
   return (
@@ -25,7 +26,8 @@ export default function Dashboard() {
 
           {/* Responsive chart container for future chart components */}
           <section className="bg-pizzabi-card border border-pizzabi-muted/10 rounded-3xl p-4 md:p-6">
-            <PizzaSalesCharts />
+            {/* <PizzaSalesCharts /> */}
+            <Charts />
           </section>
         </div>
       </main>

@@ -46,52 +46,52 @@ const sizeData = [
 ]
 
 const COLORS = {
-  blue: "#378ADD",
-  teal: "#1D9E75",
-  amber: "#EF9F27",
-  purple: "#7F77DD",
-  pink: "#D4537E",
+  gold: "var(--color-pizzabi-gold)",
+  teal: "var(--color-pizzabi-teal)",
+  amber: "var(--color-pizzabi-amber)",
+  red: "var(--color-pizzabi-red)",
+  green: "var(--color-pizzabi-green)",
 }
 
-const SIZE_COLORS = [COLORS.blue, COLORS.teal, COLORS.amber, COLORS.purple]
+const SIZE_COLORS = [COLORS.gold, COLORS.teal, COLORS.amber, COLORS.red]
 const CAT_COLORS = [
-  COLORS.blue,
+  COLORS.gold,
   COLORS.teal,
   COLORS.amber,
-  COLORS.pink,
-  COLORS.purple,
+  COLORS.green,
+  COLORS.red,
 ]
 
 // ─── Shared tooltip style ─────────────────────────────────────────────────────
 
 const tooltipStyle = {
   contentStyle: {
-    background: "#1a1d27",
-    border: "1px solid #2a2d3e",
+    background: "var(--color-pizzabi-main)",
+    border: "1px solid var(--color-pizzabi-muted)",
     borderRadius: 8,
     fontSize: 12,
-    color: "#e2e8f0",
+    color: "var(--color-pizzabi-muted)",
   },
-  labelStyle: { color: "#94a3b8", marginBottom: 4 },
+  labelStyle: { color: "var(--color-pizzabi-muted)", marginBottom: 4 },
 }
 
 // ─── Chart 1: Daily Revenue & Orders (dual-axis line) ────────────────────────
 
 function DailyRevenueChart() {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 col-span-2">
-      <p className="text-slate-500 text-xs mb-0.5">Daily revenue</p>
+    <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5 col-span-2">
+      <p className="text-pizzabi-muted text-xs mb-0.5">Daily revenue</p>
       <h2 className="text-white font-medium text-lg mb-4">
         Apr 1–30, 2024 · City Center
       </h2>
 
-      <div className="flex gap-5 mb-3 text-xs text-slate-400">
+      <div className="flex gap-5 mb-3 text-xs text-pizzabi-muted">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-0.5 bg-blue-400 inline-block rounded" />
+          <span className="w-3 h-0.5 bg-pizzabi-gold inline-block rounded" />
           Revenue ($)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-0.5 border-t-2 border-dashed border-teal-400 inline-block" />
+          <span className="w-3 h-0.5 border-t-2 border-dashed border-pizzabi-teal inline-block" />
           Orders
         </span>
       </div>
@@ -107,14 +107,14 @@ function DailyRevenueChart() {
           />
           <XAxis
             dataKey="day"
-            tick={{ fontSize: 10, fill: "#64748b" }}
+            tick={{ fontSize: 10, fill: "var(--color-pizzabi-muted)" }}
             interval={4}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             yAxisId="left"
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11, fill: "var(--color-pizzabi-muted)" }}
             tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`}
             tickLine={false}
             axisLine={false}
@@ -122,7 +122,7 @@ function DailyRevenueChart() {
           <YAxis
             yAxisId="right"
             orientation="right"
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11, fill: "var(--color-pizzabi-muted)" }}
             tickLine={false}
             axisLine={false}
           />
@@ -138,7 +138,7 @@ function DailyRevenueChart() {
             yAxisId="left"
             type="monotone"
             dataKey="revenue"
-            stroke={COLORS.blue}
+            stroke={COLORS.gold}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 5 }}
@@ -150,7 +150,7 @@ function DailyRevenueChart() {
             stroke={COLORS.teal}
             strokeWidth={2}
             strokeDasharray="5 4"
-            dot={false}
+            dot={true}
             activeDot={{ r: 5 }}
           />
         </LineChart>
@@ -163,11 +163,11 @@ function DailyRevenueChart() {
 
 function CategoryChart() {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-      <p className="text-slate-500 text-xs mb-0.5">Sales by category</p>
+    <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
+      <p className="text-pizzabi-muted text-xs mb-0.5">Sales by category</p>
       <h2 className="text-white font-medium text-lg mb-4">Pizza types</h2>
 
-      <div className="flex flex-wrap gap-3 mb-3 text-xs text-slate-400">
+      <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
         {categoryData.map((d, i) => (
           <span key={d.name} className="flex items-center gap-1.5">
             <span
@@ -192,14 +192,14 @@ function CategoryChart() {
           />
           <XAxis
             type="number"
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11, fill: "var(--color-pizzabi-muted)" }}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fontSize: 12, fill: "#94a3b8" }}
+            tick={{ fontSize: 12, fill: "var(--color-pizzabi-muted)" }}
             tickLine={false}
             axisLine={false}
             width={88}
@@ -212,7 +212,8 @@ function CategoryChart() {
             {categoryData.map((_, i) => (
               <Cell
                 key={i}
-                fill={CAT_COLORS[i] + "cc"}
+                fill={CAT_COLORS[i]}
+                fillOpacity={0.85}
                 stroke={CAT_COLORS[i]}
                 strokeWidth={1}
               />
@@ -248,11 +249,11 @@ function CustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
 
 function SizeChart() {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-      <p className="text-slate-500 text-xs mb-0.5">Sales by size</p>
+    <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
+      <p className="text-pizzabi-muted text-xs mb-0.5">Sales by size</p>
       <h2 className="text-white font-medium text-lg mb-4">Size distribution</h2>
 
-      <div className="flex flex-wrap gap-3 mb-3 text-xs text-slate-400">
+      <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
         {sizeData.map((d, i) => (
           <span key={d.name} className="flex items-center gap-1.5">
             <span
@@ -280,7 +281,8 @@ function SizeChart() {
             {sizeData.map((_, i) => (
               <Cell
                 key={i}
-                fill={SIZE_COLORS[i] + "cc"}
+                fill={SIZE_COLORS[i]}
+                fillOpacity={0.8}
                 stroke={SIZE_COLORS[i]}
                 strokeWidth={2}
               />
@@ -300,7 +302,7 @@ function SizeChart() {
 
 export default function PizzaSalesCharts() {
   return (
-    <div className="w-full bg-slate-950 p-4 md:p-6">
+    <div className="w-full bg-pizzabi-card p-4 md:p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DailyRevenueChart />
         <CategoryChart />
