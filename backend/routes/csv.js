@@ -41,7 +41,11 @@ router.post("/confirm", async (req, res) => {
  */
 router.post("/cancel", (req, res) => {
   const { tempPaths = [] } = req.body
-  tempPaths.forEach((p) => fs.unlink(p, () => {}))
+  tempPaths.forEach((p) =>
+    fs.unlink(p, (err) => {
+      if (err) console.error("Failed to delete temp file on cancel:", p, err)
+    }),
+  )
   res.json({ success: true })
 })
 

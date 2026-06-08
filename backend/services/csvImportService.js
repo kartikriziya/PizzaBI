@@ -6,6 +6,137 @@ import { normalizeColName, coerceValue } from "../utils/dataCoercion.js"
 
 const BATCH_SIZE = 500
 
+function getRawValue(row, column) {
+  const key = Object.keys(row).find((k) => normalizeColName(k) === column)
+  return key ? row[key] : null
+}
+
+function inferTypeForValues(values) {
+  const samples = values.filter(
+    (v) => v !== null && v !== undefined && String(v).trim() !== "",
+  )
+  if (samples.length === 0) return "TEXT"
+
+  let isInt = true
+  let isNumeric = true
+  let isBoolean = true
+  let isDate = true
+  let hasTime = false
+
+  for (const raw of samples) {
+    const value = String(raw).trim()
+
+    if (!/^[+-]?\d+$/.test(value)) isInt = false
+    if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)) isNumeric = false
+    if (!/^(true|false|0|1)$/i.test(value)) isBoolean = false
+
+    const dateParsed = Date.parse(value)
+    if (Number.isNaN(dateParsed)) {
+      isDate = false
+    } else {
+      if (/[T ]\d{2}:\d{2}(:\d{2})?/.test(value)) {
+        hasTime = true
+      }
+    }
+  }
+
+  if (isInt) return "INTEGER"
+  if (isNumeric) return "NUMERIC"
+  if (isBoolean) return "BOOLEAN"
+  if (isDate) return hasTime ? "TIMESTAMP" : "DATE"
+  return "TEXT"
+}
+
+function inferColumnTypes(columns, rows) {
+  const types = {}
+
+  for (const column of columns) {
+    const values = rows.map((row) => getRawValue(row, column))
+    types[column] = inferTypeForValues(values)
+  }
+
+  return types
+}
+
+function hasUniqueIdColumn(columns, rows) {
+  if (!columns.includes("id")) return false
+  const seen = new Set()
+  for (const row of rows) {
+    const raw = getRawValue(row, "id")
+    const value = raw === null || raw === undefined ? "" : String(raw).trim()
+    if (value === "" || seen.has(value)) return false
+    seen.add(value)
+  }
+  return seen.size > 0
+}
+
+function singularize(name) {
+  if (name.endsWith("ies")) return `${name.slice(0, -3)}y`
+  if (name.endsWith("s")) return name.slice(0, -1)
+  return name
+}
+
+function buildForeignKeyCandidates(tableInfos) {
+  const tableMap = new Map(tableInfos.map((info) => [info.tableName, info]))
+  const candidates = []
+
+  for (const info of tableInfos) {
+    for (const column of info.columns) {
+      if (!column.endsWith("_id")) continue
+      if (
+        info.existingForeignKeys?.some((fk) =>
+          fk.definition.includes(`"${column}"`),
+        )
+      )
+        continue
+
+      const baseName = column.slice(0, -3)
+      const possibleTargets = [baseName, `${baseName}s`, singularize(baseName)]
+      const targetTable = possibleTargets.find(
+        (name) => name !== info.tableName && tableMap.has(name),
+      )
+
+      if (!targetTable) continue
+      const targetInfo = tableMap.get(targetTable)
+      if (!targetInfo.columns.includes("id")) continue
+
+      candidates.push({
+        tableName: info.tableName,
+        column,
+        targetTable,
+        targetColumn: "id",
+      })
+    }
+  }
+
+  return candidates
+}
+
+async function isColumnUnique(client, tableName, column) {
+  const result = await client.query(
+    `SELECT COUNT("${column}") AS total,
+            COUNT(DISTINCT "${column}") AS distinct_count
+       FROM "${tableName}"
+       WHERE "${column}" IS NOT NULL`,
+  )
+  const total = parseInt(result.rows[0].total, 10)
+  const distinct = parseInt(result.rows[0].distinct_count, 10)
+  return total > 0 && total === distinct
+}
+
+async function addForeignKey(client, fk) {
+  const constraintName = `fk_${fk.tableName}_${fk.column}`.replace(
+    /[^a-zA-Z0-9_]/g,
+    "_",
+  )
+  await client.query(
+    `ALTER TABLE "${fk.tableName}"
+       ADD CONSTRAINT "${constraintName}"
+       FOREIGN KEY ("${fk.column}")
+       REFERENCES "${fk.targetTable}" ("${fk.targetColumn}")`,
+  )
+}
+
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
 /** Derives a snake_case table name from an uploaded filename.
@@ -82,7 +213,20 @@ export async function previewFiles(uploadedFiles) {
 
   for (const file of uploadedFiles) {
     const tableName = tableNameFromFile(file.originalname)
-    const { columns, rows } = await parseCsv(file.path)
+    // multer may provide either `path` (when using `dest`) or `destination`+`filename` (diskStorage).
+    const actualPath =
+      file.path ||
+      (file.destination && file.filename
+        ? path.join(file.destination, file.filename)
+        : null)
+
+    if (!actualPath) {
+      throw new Error(
+        `Cannot determine temp path for uploaded file ${file.originalname}`,
+      )
+    }
+
+    const { columns, rows } = await parseCsv(actualPath)
     const exists = await tableExists(tableName)
     const existingRowCount = exists ? await getRowCount(tableName) : 0
 
@@ -93,7 +237,11 @@ export async function previewFiles(uploadedFiles) {
       newRowCount: rows.length,
       tableExists: exists,
       existingRowCount,
-      tempPath: file.path,
+      hasExistingRows: exists && existingRowCount > 0,
+      hasEmptyExistingTable: exists && existingRowCount === 0,
+      tempPath: actualPath,
+      tempDestination: file.destination || null,
+      tempFilename: file.filename || null,
     })
   }
 
@@ -117,6 +265,8 @@ export async function importFiles(confirmedFiles) {
   try {
     await client.query("BEGIN")
 
+    const tableInfos = []
+
     for (const { tempPath, tableName, filename } of confirmedFiles) {
       if (!fs.existsSync(tempPath)) {
         throw new Error(
@@ -138,8 +288,16 @@ export async function importFiles(confirmedFiles) {
       if (exists) {
         await client.query(`DELETE FROM "${tableName}"`)
       } else {
-        const colDefs = columns.map((c) => `"${c}" TEXT`).join(", ")
-        await client.query(`CREATE TABLE "${tableName}" (${colDefs})`)
+        const colTypes = inferColumnTypes(columns, rows)
+        const colDefs = columns.map((c) => {
+          const type = colTypes[c] || "TEXT"
+          const pk =
+            c === "id" && hasUniqueIdColumn(columns, rows) ? " PRIMARY KEY" : ""
+          return `"${c}" ${type}${pk}`
+        })
+        await client.query(
+          `CREATE TABLE "${tableName}" (${colDefs.join(", ")})`,
+        )
       }
 
       // Fetch actual Postgres column types for value coercion
@@ -174,12 +332,13 @@ export async function importFiles(confirmedFiles) {
         inserted += batch.length
       }
 
-      // Restore FK constraints now that data is in place
-      for (const fk of foreignKeys) {
-        await client.query(
-          `ALTER TABLE "${tableName}" ADD CONSTRAINT "${fk.constraintName}" ${fk.definition}`,
-        )
-      }
+      tableInfos.push({
+        tableName,
+        columns,
+        rows,
+        existingForeignKeys: foreignKeys,
+        existing: exists,
+      })
 
       results.push({
         filename,
@@ -187,14 +346,57 @@ export async function importFiles(confirmedFiles) {
         rowsInserted: inserted,
         tableCreated: !exists,
       })
-      fs.unlink(tempPath, () => {})
+      fs.unlink(tempPath, (err) => {
+        if (err) console.error("Failed to delete temp file:", tempPath, err)
+      })
+    }
+
+    // Restore existing foreign keys and add inferred relationships after all data is loaded
+    for (const info of tableInfos) {
+      for (const fk of info.existingForeignKeys) {
+        await client.query(
+          `ALTER TABLE "${info.tableName}" ADD CONSTRAINT "${fk.constraintName}" ${fk.definition}`,
+        )
+      }
+    }
+
+    const inferredFks = buildForeignKeyCandidates(tableInfos)
+    for (const fk of inferredFks) {
+      const targetInfo = tableInfos.find((t) => t.tableName === fk.targetTable)
+      const canReference =
+        targetInfo.existing || targetInfo.columns.includes("id")
+      if (!canReference) continue
+
+      if (targetInfo.existing) {
+        const unique = await isColumnUnique(
+          client,
+          fk.targetTable,
+          fk.targetColumn,
+        )
+        if (!unique) continue
+      }
+
+      await addForeignKey(client, fk)
     }
 
     await client.query("COMMIT")
     return results
   } catch (err) {
     await client.query("ROLLBACK")
-    for (const { tempPath } of confirmedFiles) fs.unlink(tempPath, () => {})
+    for (const { tempPath } of confirmedFiles) {
+      try {
+        fs.unlink(tempPath, (e) => {
+          if (e)
+            console.error(
+              "Failed to delete temp file during rollback:",
+              tempPath,
+              e,
+            )
+        })
+      } catch (e) {
+        console.error("Rollback cleanup error for:", tempPath, e)
+      }
+    }
     throw err
   } finally {
     client.release()

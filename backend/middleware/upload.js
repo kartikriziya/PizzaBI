@@ -10,8 +10,18 @@ const __dirname = path.dirname(__filename)
 const uploadDir = path.join(__dirname, "..", "uploads")
 fs.mkdirSync(uploadDir, { recursive: true })
 
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (req, file, cb) => {
+    const safeName = path
+      .basename(file.originalname)
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+    cb(null, `${Date.now()}_${safeName}`)
+  },
+})
+
 const upload = multer({
-  dest: uploadDir,
+  storage,
   fileFilter: (req, file, cb) => {
     if (!file.originalname.toLowerCase().endsWith(".csv")) {
       return cb(new Error("Only CSV files are allowed"))
