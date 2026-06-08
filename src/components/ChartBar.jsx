@@ -56,6 +56,7 @@ export default function ChartBar() {
           />
           <Tooltip
             {...tooltipStyle}
+            itemStyle={{ color: "var(--color-pizzabi-gold)" }}
             formatter={(value) => [`${value} orders`, "Orders"]}
           />
           <Bar dataKey="orders" radius={[0, 4, 4, 0]}>

@@ -22,7 +22,7 @@ const CustomTooltip = ({ active, payload }) => {
       <p style={{ margin: "0 0 6px", color: "white", fontWeight: 500 }}>
         {entry.name}
       </p>
-      <p style={{ margin: 0 }}>Orders: {entry.value}</p>
+      <p style={{ margin: 0, color: "var(--color-pizzabi-gold)" }}>Orders: {entry.value}</p>
     </div>
   )
 }
