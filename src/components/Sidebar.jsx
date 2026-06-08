@@ -93,7 +93,7 @@ export default function Sidebar({
 
           {/* Navigation Items List Slot Container */}
           <SidebarContext.Provider value={{ expanded }}>
-            <ul className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+            <ul className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
               <li className="rounded-md bg-pizzabi-card/20 p-2 mb-2">
                 <button
                   onClick={toggleTheme}
