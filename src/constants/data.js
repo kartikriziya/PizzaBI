@@ -21,6 +21,13 @@ export const categoryData = [
   { name: "Pepperoni", orders: 145 },
 ]
 
+export const areaData = categoryData.map((d) => ({
+  name: d.name,
+  [d.name]: d.orders,
+}))
+
+export const categoryKeys = categoryData.map((d) => d.name)
+
 export const sizeData = [
   { name: "Large", value: 42 },
   { name: "Medium", value: 31 },
@@ -43,6 +50,26 @@ export const CAT_COLORS = [
   COLORS.amber,
   COLORS.green,
   COLORS.red,
+]
+
+export const radarData = [
+  { region: "Chicago", orders: 84 },
+  { region: "New York", orders: 72 },
+  { region: "Miami", orders: 96 },
+  { region: "Dallas", orders: 64 },
+  { region: "Phoenix", orders: 78 },
+  { region: "Minneapolis", orders: 88 },
+]
+
+export const treemapData = [
+  { name: "Classic", value: 340, fill: "var(--color-pizzabi-gold)" },
+  { name: "Veggie", value: 210, fill: "var(--color-pizzabi-teal)" },
+  { name: "BBQ Chicken", value: 185, fill: "var(--color-pizzabi-amber)" },
+  { name: "Supreme", value: 160, fill: "var(--color-pizzabi-green)" },
+  { name: "Pepperoni", value: 145, fill: "var(--color-pizzabi-red)" },
+  { name: "Margherita", value: 132, fill: "#7c6cf2" },
+  { name: "Four Cheese", value: 118, fill: "#5aa6ff" },
+  { name: "Hawaiian", value: 96, fill: "#f97316" },
 ]
 
 export const tooltipStyle = {
