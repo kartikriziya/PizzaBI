@@ -93,7 +93,7 @@ export default function Sidebar({
 
           {/* Navigation Items List Slot Container */}
           <SidebarContext.Provider value={{ expanded }}>
-            <ul className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+            <ul className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
               <li className="rounded-md bg-pizzabi-card/20 p-2 mb-2">
                 <button
                   onClick={toggleTheme}
@@ -177,9 +177,28 @@ export default function Sidebar({
  */
 export function SidebarItem({ icon, text, to = "/", active = false }) {
   const { expanded } = useContext(SidebarContext)
+  const [tooltipPos, setTooltipPos] = useState(null)
+  const itemRef = useRef(null)
+
+  const handleMouseEnter = () => {
+    if (!expanded && itemRef.current) {
+      const rect = itemRef.current.getBoundingClientRect()
+      setTooltipPos({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 8,
+      })
+    }
+  }
+
+  const handleMouseLeave = () => setTooltipPos(null)
 
   return (
-    <li className="relative group">
+    <li
+      ref={itemRef}
+      className="relative group"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <NavLink
         end={to === "/"}
         to={to}
@@ -193,13 +212,13 @@ export function SidebarItem({ icon, text, to = "/", active = false }) {
         }}
       >
         <span className="shrink-0">{icon}</span>
-        <span className="truncate">{text}</span>
+        {expanded && <span className="truncate">{text}</span>}
       </NavLink>
 
-      {!expanded && (
+      {tooltipPos && (
         <div
-          className={`absolute left-20 rounded-md px-1 py-1 ml-2 bg-pizzabi-card shadow-lg text-xs text-pizzabi-gold 
-            opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
+          style={{ top: tooltipPos.top, left: tooltipPos.left }}
+          className="fixed z-9999 -translate-y-1/2 rounded-md px-2 py-1 bg-pizzabi-card shadow-lg text-xs text-pizzabi-gold whitespace-nowrap pointer-events-none"
         >
           {text}
         </div>

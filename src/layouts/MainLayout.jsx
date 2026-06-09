@@ -40,7 +40,7 @@ export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
         {/* Dynamic child components (Dashboard, SampleDashboard, etc.) 
             will mount automatically right here when routes are clicked! 
         */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
       </div>

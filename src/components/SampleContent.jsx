@@ -137,7 +137,7 @@ function BarChartSvg({
       viewBox={`0 0 ${totalW} ${height}`}
       width="100%"
       height={height}
-      style={{ overflow: "visible" }}
+      style={{ overflow: "hidden" }}
     >
       {/* grid lines */}
       {ticks.map((t) => {
