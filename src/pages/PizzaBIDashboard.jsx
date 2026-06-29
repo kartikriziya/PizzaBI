@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 
 // ─── tiny icon stubs (inline SVG) ────────────────────────────────────────────
 const Icon = ({ d, size = 16, className = "" }) => (
@@ -404,24 +404,32 @@ const NAV_ITEMS = [
   { key: "overview", label: "Overview" },
   { key: "sales", label: "Sales" },
   { key: "orders", label: "Orders" },
-  { key: "menu", label: "Menu" },
-  { key: "stores", label: "Stores" },
-  { key: "customers", label: "Customers" },
-  { key: "marketing", label: "Marketing" },
-  { key: "reports", label: "Reports" },
-  { key: "alerts", label: "Alerts" },
-  { key: "settings", label: "Settings" },
 ]
 
 // ─── FILTER BAR ───────────────────────────────────────────────────────────────
 const FILTER_DEFAULTS = {
   dateRange: "May 1 – May 31, 2024",
-  store: "Stockton",
+  store: "All",
   region: "All",
   category: "All",
   size: "All",
   launch: "All",
 }
+
+const FILTER_LABELS = {
+  dateRange: "Date Range",
+  store: "Store",
+  region: "Region",
+  category: "Category",
+  size: "Size",
+  launch: "Launch",
+}
+
+const REGION_OPTIONS = ["All", "Downtown", "City Center", "Westside", "North Point", "East End"]
+const CATEGORY_OPTIONS = ["All", "Classic", "Vegetarian", "Specialty"]
+const SIZE_OPTIONS = ["All", "Small", "Medium", "Large", "Extra Large"]
+const STORE_OPTIONS = ["All", "Downtown Store", "City Center Store", "Westside Store", "North Point Store", "East End Store"]
+const LAUNCH_OPTIONS = ["All", "Q1 2024", "Q2 2024", "Q3 2023", "Q4 2023"]
 
 function FilterPill({ label, onRemove }) {
   return (
@@ -441,14 +449,245 @@ function FilterPill({ label, onRemove }) {
   )
 }
 
+function DateRangePicker({ initStart, initEnd, onApply, onClose }) {
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  const [viewYear, setViewYear] = useState(initStart ? initStart.getFullYear() : 2024)
+  const [viewMonth, setViewMonth] = useState(initStart ? initStart.getMonth() : 4)
+  const [selStart, setSelStart] = useState(initStart || null)
+  const [selEnd, setSelEnd] = useState(initEnd || null)
+  const [step, setStep] = useState("start")
+  const [hoverDate, setHoverDate] = useState(null)
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const days = []
+  for (let i = 0; i < firstDay; i++) days.push(null)
+  for (let i = 1; i <= daysInMonth; i++) days.push(new Date(viewYear, viewMonth, i))
+
+  function handleDay(day) {
+    if (step === "start" || (selStart && selEnd)) {
+      setSelStart(day); setSelEnd(null); setStep("end")
+    } else {
+      if (day < selStart) { setSelEnd(selStart); setSelStart(day) }
+      else setSelEnd(day)
+      setStep("start")
+    }
+  }
+
+  function getDayState(day) {
+    const rangeEnd = selEnd || (step === "end" && hoverDate)
+    if (selStart && day.toDateString() === selStart.toDateString()) return "start"
+    if (rangeEnd && day.toDateString() === rangeEnd.toDateString()) return "end"
+    if (selStart && rangeEnd) {
+      const lo = selStart < rangeEnd ? selStart : rangeEnd
+      const hi = selStart < rangeEnd ? rangeEnd : selStart
+      if (day > lo && day < hi) return "range"
+    }
+    return "normal"
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+
+  function handleApply() {
+    if (!selStart) return
+    const end = selEnd || selStart
+    const lo = selStart <= end ? selStart : end
+    const hi = selStart <= end ? end : selStart
+    const label = lo.toDateString() === hi.toDateString()
+      ? `${fmtDate(lo)}, ${lo.getFullYear()}`
+      : `${fmtDate(lo)} – ${fmtDate(hi)}, ${lo.getFullYear()}`
+    onApply({ start: lo, end: hi, label })
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const PRESETS = [
+    { label: "May 2024",    s: new Date(2024,4,1),  e: new Date(2024,4,31) },
+    { label: "Apr 2024",    s: new Date(2024,3,1),  e: new Date(2024,3,30) },
+    { label: "Last 7 days", s: new Date(2024,4,25), e: new Date(2024,4,31) },
+    { label: "Q1 2024",     s: new Date(2024,0,1),  e: new Date(2024,2,31) },
+    { label: "Q2 2024",     s: new Date(2024,3,1),  e: new Date(2024,5,30) },
+  ]
+
+  const dayStyles = {
+    start:  { background: "#f5a623", color: "#0f1117", fontWeight: 700, borderRadius: 4 },
+    end:    { background: "#f5a623", color: "#0f1117", fontWeight: 700, borderRadius: 4 },
+    range:  { background: "#f5a62233", color: "#e5e7eb" },
+    normal: { background: "transparent", color: "#e5e7eb" },
+  }
+
+  return (
+    <div style={{ background: "#1a1d27", border: "1px solid #252840", borderRadius: 14, padding: 16, width: 360, boxShadow: "0 12px 40px #00000088" }}>
+      <div style={{ display: "flex", gap: 14 }}>
+        {/* presets */}
+        <div style={{ width: 104 }}>
+          <div style={{ color: "#6b7280", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>QUICK SELECT</div>
+          {PRESETS.map(p => (
+            <button
+              key={p.label}
+              onClick={() => { setSelStart(p.s); setSelEnd(p.e); setStep("start"); setViewYear(p.s.getFullYear()); setViewMonth(p.s.getMonth()) }}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "5px 8px", borderRadius: 6, fontSize: 11, color: "#9ca3af", marginBottom: 2, cursor: "pointer", background: "transparent", border: "none" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#252840"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* calendar */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <button onClick={prevMonth} style={{ color: "#9ca3af", fontSize: 18, lineHeight: 1, padding: "0 6px", background: "none", border: "none", cursor: "pointer" }}>‹</button>
+            <span style={{ color: "#e5e7eb", fontSize: 12, fontWeight: 600 }}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
+            <button onClick={nextMonth} style={{ color: "#9ca3af", fontSize: 18, lineHeight: 1, padding: "0 6px", background: "none", border: "none", cursor: "pointer" }}>›</button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+            {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 9, color: "#6b7280", paddingBottom: 4, fontWeight: 600 }}>{d}</div>
+            ))}
+            {days.map((day, i) => {
+              if (!day) return <div key={`e${i}`} />
+              const state = getDayState(day)
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleDay(day)}
+                  onMouseEnter={() => step === "end" && !selEnd && setHoverDate(day)}
+                  onMouseLeave={() => setHoverDate(null)}
+                  style={{ textAlign: "center", fontSize: 11, padding: "4px 0", cursor: "pointer", border: "none", ...dayStyles[state] }}
+                >
+                  {day.getDate()}
+                </button>
+              )
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: "#6b7280", textAlign: "center", minHeight: 14 }}>
+            {step === "start" ? "Startdatum wählen" : "Enddatum wählen"}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #252840", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 11, color: "#9ca3af" }}>
+          {selStart
+            ? selEnd ? `${fmtDate(selStart)} – ${fmtDate(selEnd)}` : fmtDate(selStart)
+            : "Kein Datum ausgewählt"}
+        </span>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={onClose} style={{ fontSize: 11, color: "#6b7280", padding: "4px 10px", borderRadius: 6, background: "transparent", cursor: "pointer", border: "none" }}>Abbrechen</button>
+          <button
+            onClick={handleApply}
+            disabled={!selStart}
+            style={{ fontSize: 11, color: "#0f1117", background: selStart ? "#f5a623" : "#6b702855", padding: "4px 10px", borderRadius: 6, fontWeight: 600, cursor: selStart ? "pointer" : "default", border: "none" }}
+          >
+            Anwenden
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SelectDropdown({ options, value, onChange }) {
+  return (
+    <div style={{ background: "#1a1d27", border: "1px solid #252840", borderRadius: 10, padding: 4, minWidth: 190, boxShadow: "0 12px 40px #00000088", maxHeight: 260, overflowY: "auto" }}>
+      {options.map(opt => {
+        const active = opt === value
+        return (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              width: "100%", textAlign: "left",
+              padding: "7px 12px", borderRadius: 6, fontSize: 12,
+              color: active ? "#f5a623" : "#e5e7eb",
+              background: active ? "#f5a62311" : "transparent",
+              fontWeight: active ? 600 : 400,
+              cursor: "pointer", border: "none",
+            }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#252840" }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent" }}
+          >
+            <span>{opt}</span>
+            {active && <span style={{ color: "#f5a623", fontSize: 10 }}>✓</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function PizzaBIDashboard() {
   const [activeNav, setActiveNav] = useState("overview")
   const [filters, setFilters] = useState({ ...FILTER_DEFAULTS })
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [openDropdown, setOpenDropdown] = useState(null)
+  const [dateRange, setDateRange] = useState({ start: new Date(2024, 4, 1), end: new Date(2024, 4, 31) })
+  const filterBarRef = useRef(null)
 
-  const removeFilter = (key) => setFilters((f) => ({ ...f, [key]: "All" }))
-  const activePills = Object.entries(filters).filter(([, v]) => v !== "All")
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+    return () => document.removeEventListener("mousedown", handleOutsideClick)
+  }, [])
+
+  const removeFilter = (key) => setFilters(f => ({ ...f, [key]: "All" }))
+
+  const clearAllFilters = () => {
+    setFilters({ ...FILTER_DEFAULTS })
+    setDateRange({ start: new Date(2024, 4, 1), end: new Date(2024, 4, 31) })
+    setOpenDropdown(null)
+  }
+
+  const toggleDropdown = (key) => setOpenDropdown(k => k === key ? null : key)
+
+  const activePills = Object.entries(filters).filter(([k, v]) => k !== "dateRange" && v !== "All")
+
+  function getDropdownContent(key) {
+    switch (key) {
+      case "dateRange":
+        return (
+          <DateRangePicker
+            initStart={dateRange.start}
+            initEnd={dateRange.end}
+            onApply={({ start, end, label }) => {
+              setDateRange({ start, end })
+              setFilters(f => ({ ...f, dateRange: label }))
+              setOpenDropdown(null)
+            }}
+            onClose={() => setOpenDropdown(null)}
+          />
+        )
+      case "region":
+        return <SelectDropdown options={REGION_OPTIONS} value={filters.region} onChange={v => { setFilters(f => ({ ...f, region: v })); setOpenDropdown(null) }} />
+      case "category":
+        return <SelectDropdown options={CATEGORY_OPTIONS} value={filters.category} onChange={v => { setFilters(f => ({ ...f, category: v })); setOpenDropdown(null) }} />
+      case "size":
+        return <SelectDropdown options={SIZE_OPTIONS} value={filters.size} onChange={v => { setFilters(f => ({ ...f, size: v })); setOpenDropdown(null) }} />
+      case "store":
+        return <SelectDropdown options={STORE_OPTIONS} value={filters.store} onChange={v => { setFilters(f => ({ ...f, store: v })); setOpenDropdown(null) }} />
+      case "launch":
+        return <SelectDropdown options={LAUNCH_OPTIONS} value={filters.launch} onChange={v => { setFilters(f => ({ ...f, launch: v })); setOpenDropdown(null) }} />
+      default:
+        return null
+    }
+  }
 
   return (
     <div
@@ -560,6 +799,7 @@ export default function PizzaBIDashboard() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* ── TOPBAR ── */}
         <header
+          ref={filterBarRef}
           className="px-6 py-4 flex-shrink-0"
           style={{ borderBottom: "1px solid #252840", background: "#13151f" }}
         >
@@ -573,6 +813,7 @@ export default function PizzaBIDashboard() {
               </p>
             </div>
             <button
+              onClick={clearAllFilters}
               className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
               style={{
                 background: "#e8404022",
@@ -594,12 +835,6 @@ export default function PizzaBIDashboard() {
                 val: filters.dateRange,
               },
               {
-                key: "store",
-                icon: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
-                label: "Store",
-                val: filters.store,
-              },
-              {
                 key: "region",
                 icon: "M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z",
                 label: "Region",
@@ -608,13 +843,19 @@ export default function PizzaBIDashboard() {
               {
                 key: "category",
                 icon: "M12 2a10 10 0 100 20A10 10 0 0012 2z",
-                label: "Category",
+                label: "Pizza Typ",
                 val: filters.category,
+              },
+              {
+                key: "store",
+                icon: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z",
+                label: "Store",
+                val: filters.store,
               },
               {
                 key: "size",
                 icon: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z",
-                label: "Size",
+                label: "Größe",
                 val: filters.size,
               },
               {
@@ -624,26 +865,37 @@ export default function PizzaBIDashboard() {
                 val: filters.launch,
               },
             ].map((f) => (
-              <div
-                key={f.key}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs cursor-pointer hover:opacity-90 transition-opacity"
-                style={{
-                  background: "#1e2235",
-                  border: "1px solid #252840",
-                  color: "#9ca3af",
-                }}
-              >
-                <Icon
-                  d={f.icon}
-                  size={12}
-                  className="flex-shrink-0"
-                  style={{ color: "#f5a623" }}
-                />
-                <span style={{ color: "#6b7280" }}>{f.label}</span>
-                <span className="font-medium" style={{ color: "#e5e7eb" }}>
-                  {f.val}
-                </span>
-                <Icon d="M6 9l6 6 6-6" size={10} />
+              <div key={f.key} className="relative">
+                <button
+                  onClick={() => toggleDropdown(f.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all"
+                  style={{
+                    background: openDropdown === f.key ? "#252840" : "#1e2235",
+                    border: openDropdown === f.key ? "1px solid #f5a62355" : "1px solid #252840",
+                    color: "#9ca3af",
+                  }}
+                >
+                  <Icon
+                    d={f.icon}
+                    size={12}
+                    className="flex-shrink-0"
+                    style={{ color: "#f5a623" }}
+                  />
+                  <span style={{ color: "#6b7280" }}>{f.label}</span>
+                  <span className="font-medium" style={{ color: f.val !== "All" ? "#f5a623" : "#e5e7eb" }}>
+                    {f.val}
+                  </span>
+                  <Icon
+                    d="M6 9l6 6 6-6"
+                    size={10}
+                    style={{ transform: openDropdown === f.key ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+                  />
+                </button>
+                {openDropdown === f.key && (
+                  <div className="absolute top-full left-0 mt-2 z-50">
+                    {getDropdownContent(f.key)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -652,12 +904,12 @@ export default function PizzaBIDashboard() {
           {activePills.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="text-xs" style={{ color: "#6b7280" }}>
-                Active Filters:
+                Aktive Filter:
               </span>
               {activePills.map(([k, v]) => (
                 <FilterPill
                   key={k}
-                  label={`${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`}
+                  label={`${FILTER_LABELS[k] ?? k}: ${v}`}
                   onRemove={() => removeFilter(k)}
                 />
               ))}

@@ -1,16 +1,18 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
-import MainLayout from "../layouts/MainLayout" // Renamed layout component
-import Dashboard from "../pages/Dashboard" // Your new empty default page
+import MainLayout from "../layouts/MainLayout"
+import Dashboard from "../pages/Dashboard"
 import SampleDashboard from "../pages/SampleDashboard"
 import UploadFile from "../components/UploadFile"
+import PizzaBIDashboard from "../pages/PizzaBIDashboard"
 
 export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Parent Layout Route: This renders the persistent shell layout (Sidebar).
-          We pass the theme and logout props down to the MainLayout shell.
-        */}
+        {/* PizzaBIDashboard ist die Hauptseite */}
+        <Route path="/" element={<PizzaBIDashboard />} />
+        <Route path="/pizza-bi" element={<PizzaBIDashboard />} />
+
         <Route
           element={
             <MainLayout
@@ -20,9 +22,6 @@ export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
             />
           }
         >
-          {/* Nested Child Routes: These get dropped dynamically into the 
-            <Outlet /> placeholder inside MainLayout based on the URL path.
-          */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/upload" element={<UploadFile />} />
           <Route path="/statistics" element={<SampleDashboard />} />
