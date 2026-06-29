@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import Loader from "./Loader"
 
 const API = "http://localhost:5000/api/csv"
 
@@ -114,12 +116,18 @@ export default function UploadFile({ maxFiles = 20 }) {
     setStatus("idle")
   }
 
+  const navigate = useNavigate()
+
   const handleReset = () => {
     setFiles([])
     setPreviews([])
     setResults([])
     setError(null)
     setStatus("idle")
+  }
+
+  const handleReturnToDashboard = () => {
+    navigate("/")
   }
 
   const hasWarnings = previews.some((p) => p.tableExists)
@@ -156,12 +164,20 @@ export default function UploadFile({ maxFiles = 20 }) {
             </div>
           ))}
         </div>
-        <button
-          onClick={handleReset}
-          className="px-3 py-2 bg-pizzabi-gold text-pizzabi-main rounded shadow-sm hover:opacity-90 transition text-sm"
-        >
-          Import more files
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleReset}
+            className="px-3 py-2 bg-pizzabi-gold text-pizzabi-main rounded shadow-sm hover:opacity-90 transition text-sm"
+          >
+            Import more files
+          </button>
+          <button
+            onClick={handleReturnToDashboard}
+            className="px-3 py-2 bg-pizzabi-main text-pizzabi-gold rounded shadow-sm hover:opacity-90 transition text-sm"
+          >
+            Return to dashboard
+          </button>
+        </div>
       </div>
     )
   }
@@ -169,6 +185,11 @@ export default function UploadFile({ maxFiles = 20 }) {
   // ── Render: Confirm dialog ────────────────────────────────────────────────
 
   if (status === "confirming" || status === "importing") {
+    // Show loader while importing
+    if (status === "importing") {
+      return <Loader size="lg" message="Importing data..." />
+    }
+
     return (
       <div className="p-4 bg-pizzabi-card/10 rounded-md border border-pizzabi-muted/20 space-y-4">
         <h3 className="text-pizzabi-gold font-semibold text-sm">
@@ -329,7 +350,8 @@ export default function UploadFile({ maxFiles = 20 }) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="px-3 py-2 bg-pizzabi-gold text-pizzabi-main rounded shadow-sm hover:opacity-90 transition text-sm"
+          disabled={status === "uploading"}
+          className="px-3 py-2 bg-pizzabi-gold text-pizzabi-main rounded shadow-sm hover:opacity-90 transition text-sm disabled:opacity-40"
         >
           Select files
         </button>
@@ -346,6 +368,11 @@ export default function UploadFile({ maxFiles = 20 }) {
           {status === "uploading" ? "Analyzing…" : `Upload (${files.length})`}
         </button>
       </div>
+
+      {/* Loader while uploading */}
+      {status === "uploading" && (
+        <Loader size="md" message="Analyzing CSV files..." />
+      )}
 
       {/* Error */}
       {error && (
