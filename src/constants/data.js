@@ -72,6 +72,16 @@ export const treemapData = [
   { name: "Hawaiian", value: 96, fill: "#f97316" },
 ]
 
+export const weekdayData = [
+  { day: "Mon", orders: 2892 },
+  { day: "Tue", orders: 2654 },
+  { day: "Wed", orders: 2781 },
+  { day: "Thu", orders: 2912 },
+  { day: "Fri", orders: 3154 },
+  { day: "Sat", orders: 2367 },
+  { day: "Sun", orders: 1972 },
+]
+
 export const tooltipStyle = {
   contentStyle: {
     background: "var(--color-pizzabi-main)",

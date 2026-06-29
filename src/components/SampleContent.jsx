@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react"
+import KeyInsightsTable from "./KeyInsightsTable"
+import RecommendationsTable from "./RecommendationsTable"
+import KeyInsights from "./KeyInsights"
+import Recommendations from "./Recommendations"
 
 // ── tokens ────────────────────────────────────────────────────────────────────
 const C = {
@@ -360,6 +364,8 @@ export function BarChartCard({
  * or swap out the child components entirely.
  */
 export default function SampleContent({ kpi = {}, chart = {} }) {
+  const [viewMode, setViewMode] = useState("both") // "both", "table", "cards"
+
   return (
     <div
       className="flex-1 overflow-y-auto p-5"
@@ -368,6 +374,85 @@ export default function SampleContent({ kpi = {}, chart = {} }) {
         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
       }}
     >
+      {/* ── View Mode Toggle ── */}
+      <section className="mb-6 flex gap-2">
+        <button
+          onClick={() => setViewMode("both")}
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+          style={{
+            background: viewMode === "both" ? C.orange : C.card,
+            color: viewMode === "both" ? "#000" : C.text,
+            border: `1px solid ${C.border}`,
+          }}
+        >
+          Both Views
+        </button>
+        <button
+          onClick={() => setViewMode("table")}
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+          style={{
+            background: viewMode === "table" ? C.orange : C.card,
+            color: viewMode === "table" ? "#000" : C.text,
+            border: `1px solid ${C.border}`,
+          }}
+        >
+          Table
+        </button>
+        <button
+          onClick={() => setViewMode("cards")}
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+          style={{
+            background: viewMode === "cards" ? C.orange : C.card,
+            color: viewMode === "cards" ? "#000" : C.text,
+            border: `1px solid ${C.border}`,
+          }}
+        >
+          Cards
+        </button>
+      </section>
+
+      {/* ── Table Version ── */}
+      {(viewMode === "both" || viewMode === "table") && (
+        <>
+          <section className="mb-6">
+            <h2
+              className="text-xs font-semibold uppercase tracking-widest mb-3"
+              style={{ color: C.muted }}
+            >
+            Table View
+            </h2>
+            <KeyInsightsTable />
+          </section>
+
+          <section className="mb-6">
+            <RecommendationsTable />
+          </section>
+        </>
+      )}
+
+      {/* ── Card Version ── */}
+      {(viewMode === "both" || viewMode === "cards") && (
+        <>
+          <section className="mb-6">
+            <h2
+              className="text-xs font-semibold uppercase tracking-widest mb-3"
+              style={{ color: C.muted }}
+            >
+            Card View
+            </h2>
+            <div style={{ background: C.bg }}>
+              <KeyInsights />
+            </div>
+          </section>
+
+          <section className="mb-6">
+            <div style={{ background: C.bg }}>
+              <Recommendations />
+            </div>
+          </section>
+        </>
+      )}
+
       {/* ── KPI row ── */}
       <section className="mb-4">
         <h2
