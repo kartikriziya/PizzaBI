@@ -4,7 +4,6 @@ import ChartBar from "./ChartBar"
 import ChartPie from "./ChartPie"
 import ChartArea from "./ChartArea"
 import ChartRadar from "./ChartRadar"
-import ChartTreeMap from "./ChartTreeMap"
 import OrdersByWeekday from "./OrdersByWeekday"
 import Kpi from "./Kpi"
 
@@ -19,7 +18,6 @@ export default function Charts() {
         <ChartPie />
         <ChartArea />
         <ChartRadar />
-        <ChartTreeMap />
       </div>
     </div>
   )

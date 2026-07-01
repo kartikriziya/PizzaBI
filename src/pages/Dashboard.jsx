@@ -1,34 +1,30 @@
-import React from "react"
-import PizzaSalesHeader from "../components/Header"
-import PizzaSalesCharts from "../components/PizzaSalesCharts"
 import Charts from "../components/Charts"
+import ChartCoMatrix from "../components/ChartCoMatrix"
 
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-pizzabi-main">
-      {/* Sticky header inside the dashboard content area */}
-      <div className="sticky top-0 z-10">
-        <PizzaSalesHeader />
-      </div>
-
-      {/* Main content below the sticky header */}
-      <main className="px-4 md:px-6 lg:px-8">
+      <main className="px-4 md:px-6 lg:px-8 py-6">
         <div className="mx-auto max-w-7xl space-y-6">
-          <div className="space-y-4">
-            <h1 className="text-2xl font-bold text-pizzabi-gold">
-              Main Dashboard
-            </h1>
-            <p className="text-pizzabi-muted text-sm">
+
+          <div>
+            <h1 className="text-2xl font-bold text-pizzabi-gold">Main Dashboard</h1>
+            <p className="text-pizzabi-muted text-sm mt-1">
               Welcome back! Your core real-time analytics monitoring cards and
               sales data views will mount inside this frame.
             </p>
           </div>
 
-          {/* Responsive chart container for future chart components */}
+          {/* Sales charts */}
           <section className="bg-pizzabi-card border border-pizzabi-muted/10 rounded-3xl p-4 md:p-6">
-            {/* <PizzaSalesCharts /> */}
             <Charts />
           </section>
+
+          {/* Pizza co-occurrence matrix */}
+          <section className="bg-pizzabi-card border border-pizzabi-muted/10 rounded-3xl p-4 md:p-6">
+            <ChartCoMatrix />
+          </section>
+
         </div>
       </main>
     </div>
