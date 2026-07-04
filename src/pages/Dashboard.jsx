@@ -22,9 +22,10 @@ export default function Dashboard() {
       </div>
 
       {/* Main content below the sticky header */}
-      <main className="px-4 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <div className="space-y-4">
+      <main className="w-full">
+        {/* Responsive chart container for future chart components */}
+        <section className="w-full bg-pizzabi-card border border-pizzabi-muted/10 p-4 md:p-6">
+          <div className="space-y-4 mb-6">
             <h1 className="text-2xl font-bold text-pizzabi-gold">
               Main Dashboard
             </h1>
@@ -33,13 +34,9 @@ export default function Dashboard() {
               sales data views will mount inside this frame.
             </p>
           </div>
-
-          {/* Responsive chart container for future chart components */}
-          <section className="bg-pizzabi-card border border-pizzabi-muted/10 rounded-3xl p-4 md:p-6">
-            {/* <PizzaSalesCharts /> */}
-            <Charts selectedFilters={selectedFilters} />
-          </section>
-        </div>
+          {/* <PizzaSalesCharts /> */}
+          <Charts />
+        </section>
       </main>
     </div>
   )

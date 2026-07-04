@@ -49,18 +49,27 @@ export default function RecommendationsTable() {
 
   return (
     <div
-      className="rounded-2xl p-4 flex flex-col gap-3"
+      className="flex flex-col gap-3 rounded-lg p-3 transition-all duration-200"
       style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+        border: `1px solid ${C.border}`,
+        background: "transparent",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = C.orange
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = C.border
       }}
     >
       {/* header */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold" style={{ color: C.text }}>
+      <div className="mb-4">
+        <h3 className="text-lg font-bold mb-1" style={{ color: C.orange }}>
           Recommendations
-        </span>
+        </h3>
+        <p className="text-sm" style={{ color: C.muted }}>
+          Strategic actions and optimization opportunities for growth
+        </p>
       </div>
 
       {/* table */}

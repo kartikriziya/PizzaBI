@@ -1,7 +1,7 @@
 import React from "react"
 import { Outlet } from "react-router-dom"
 import Sidebar, { SidebarItem } from "../components/Sidebar"
-import { BarChart3, LayoutDashboard, Upload } from "lucide-react"
+import { BarChart3, LayoutDashboard, Upload, Eye } from "lucide-react"
 
 export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
   return (
@@ -26,6 +26,11 @@ export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
           icon={<BarChart3 size={20} />}
           text="Statistics"
           to="/statistics"
+        />
+        <SidebarItem
+          icon={<Eye size={20} />}
+          text="Overview"
+          to="/overview"
         />
         <SidebarItem
           icon={<Upload size={20} />}

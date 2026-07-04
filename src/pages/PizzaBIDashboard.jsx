@@ -566,7 +566,7 @@ export default function PizzaBIDashboard() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                Pizza Sales Overview
+                Pizza Sales Filters
               </h1>
               <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
                 Track key metrics and performance insights across all stores.
