@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import {
   BarChart,
   Bar,
@@ -9,16 +9,36 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
-import { categoryData, CAT_COLORS, tooltipStyle } from "../constants/data"
+import { CAT_COLORS, tooltipStyle } from "../constants/data"
+import { getCategoryChartData } from "../apis/chartApi.js"
 
-export default function ChartBar() {
+export default function ChartBar({ selectedFilters }) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const result = await getCategoryChartData(selectedFilters)
+        setData(result)
+      } catch (error) {
+        console.error("Failed to load category chart data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [selectedFilters])
+
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Sales by category</p>
       <h2 className="text-white font-medium text-lg mb-4">Pizza types</h2>
 
       <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
-        {categoryData.map((d, i) => (
+        {data.map((d, i) => (
           <span key={d.name} className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-sm inline-block"
@@ -32,7 +52,7 @@ export default function ChartBar() {
       <ResponsiveContainer width="100%" height={240}>
         <BarChart
           layout="vertical"
-          data={categoryData}
+          data={data}
           margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
         >
           <CartesianGrid
@@ -60,7 +80,7 @@ export default function ChartBar() {
             formatter={(value) => [`${value} orders`, "Orders"]}
           />
           <Bar dataKey="orders" radius={[0, 4, 4, 0]}>
-            {categoryData.map((_, i) => (
+            {data.map((_, i) => (
               <Cell
                 key={i}
                 fill={CAT_COLORS[i]}

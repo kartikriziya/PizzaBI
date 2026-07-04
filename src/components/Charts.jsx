@@ -13,14 +13,14 @@ export default function Charts({ selectedFilters }) {
       <div className="bg-pizzabi-card p-4 md:p-6 space-y-4">
         <Kpi selectedFilters={selectedFilters} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartLine />
-          <ChartBar />
-          <OrdersByWeekday />
-          <ChartPie />
-          <ChartRadar />
+          <ChartLine selectedFilters={selectedFilters} />
+          <ChartBar selectedFilters={selectedFilters} />
+          <OrdersByWeekday selectedFilters={selectedFilters} />
+          <ChartPie selectedFilters={selectedFilters} />
+          <ChartRadar selectedFilters={selectedFilters} />
         </div>
       </div>
-      <ChartArea />
+      <ChartArea selectedFilters={selectedFilters} />
     </div>
   )
 }

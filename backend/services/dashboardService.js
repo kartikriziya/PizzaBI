@@ -76,7 +76,7 @@ function formatDelta(value, baseline) {
   return `${sign} ${Math.abs(change).toFixed(1)}% vs baseline`
 }
 
-export async function getKpiMetrics(filters = {}) {
+function buildFilterClause(filters) {
   const baseFilters = {
     city: filters.city || "",
     state: filters.state || "",
@@ -94,6 +94,12 @@ export async function getKpiMetrics(filters = {}) {
     itemConditions,
     baseQuery.nextIndex,
   )
+
+  return { baseQuery, itemQuery }
+}
+
+export async function getKpiMetrics(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -173,4 +179,218 @@ export async function getKpiMetrics(filters = {}) {
       delta: formatDelta(newCustomers, baselineCustomers),
     },
   }
+}
+
+export async function getLineChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      TO_CHAR(orders.order_date, 'DD') AS day,
+      SUM(orders.total)::numeric AS revenue,
+      COUNT(DISTINCT orders.order_id)::int AS orders
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN (
+      SELECT oi.order_id
+      FROM orderitems oi
+      LEFT JOIN products p ON oi.sku = p.sku
+      ${itemQuery.sql}
+      GROUP BY oi.order_id
+    ) item_counts ON item_counts.order_id = orders.order_id
+    ${baseQuery.sql}
+    GROUP BY TO_CHAR(orders.order_date, 'DD')
+    ORDER BY MIN(orders.order_date)
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    day: row.day,
+    revenue: Number(row.revenue || 0),
+    orders: Number(row.orders || 0),
+  }))
+}
+
+export async function getCategoryChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      p.category AS name,
+      COUNT(DISTINCT orders.order_id)::int AS orders
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    ${itemQuery.sql}
+    ${baseQuery.sql}
+    GROUP BY p.category
+    ORDER BY orders DESC
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    name: row.name || "Uncategorized",
+    orders: Number(row.orders || 0),
+  }))
+}
+
+export async function getSizeChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      p.size AS name,
+      COUNT(DISTINCT orders.order_id)::int AS value
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    ${itemQuery.sql}
+    ${baseQuery.sql}
+    GROUP BY p.size
+    ORDER BY value DESC
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    name: row.name || "Unknown",
+    value: Number(row.value || 0),
+  }))
+}
+
+export async function getAreaChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      TO_CHAR(orders.order_date, 'DD') AS day,
+      SUM(orders.total)::numeric AS revenue
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN (
+      SELECT oi.order_id
+      FROM orderitems oi
+      LEFT JOIN products p ON oi.sku = p.sku
+      ${itemQuery.sql}
+      GROUP BY oi.order_id
+    ) item_counts ON item_counts.order_id = orders.order_id
+    ${baseQuery.sql}
+    GROUP BY TO_CHAR(orders.order_date, 'DD')
+    ORDER BY MIN(orders.order_date)
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    day: row.day,
+    revenue: Number(row.revenue || 0),
+  }))
+}
+
+export async function getRadarChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      stores.state AS region,
+      COUNT(DISTINCT orders.order_id)::int AS orders
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN (
+      SELECT oi.order_id
+      FROM orderitems oi
+      LEFT JOIN products p ON oi.sku = p.sku
+      ${itemQuery.sql}
+      GROUP BY oi.order_id
+    ) item_counts ON item_counts.order_id = orders.order_id
+    ${baseQuery.sql}
+    GROUP BY stores.state
+    ORDER BY orders DESC
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    region: row.region || "Unknown",
+    orders: Number(row.orders || 0),
+  }))
+}
+
+export async function getWeekdayChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      TO_CHAR(orders.order_date, 'Dy') AS day,
+      COUNT(DISTINCT orders.order_id)::int AS orders
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN (
+      SELECT oi.order_id
+      FROM orderitems oi
+      LEFT JOIN products p ON oi.sku = p.sku
+      ${itemQuery.sql}
+      GROUP BY oi.order_id
+    ) item_counts ON item_counts.order_id = orders.order_id
+    ${baseQuery.sql}
+    GROUP BY TO_CHAR(orders.order_date, 'Dy')
+    ORDER BY MIN(orders.order_date)
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    day: row.day,
+    orders: Number(row.orders || 0),
+  }))
+}
+
+export async function getTreemapChartData(filters = {}) {
+  const { baseQuery, itemQuery } = buildFilterClause(filters)
+
+  const query = `
+    SELECT
+      p.category AS name,
+      COUNT(DISTINCT orders.order_id)::int AS value
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.store_id
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    ${itemQuery.sql}
+    ${baseQuery.sql}
+    GROUP BY p.category
+    ORDER BY value DESC
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  return result.rows.map((row) => ({
+    name: row.name || "Uncategorized",
+    value: Number(row.value || 0),
+  }))
 }

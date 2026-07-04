@@ -1,6 +1,6 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { ResponsiveContainer, Tooltip, Treemap } from "recharts"
-import { treemapData } from "../constants/data"
+import { getTreemapChartData } from "../apis/chartApi.js"
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null
@@ -22,7 +22,9 @@ const CustomTooltip = ({ active, payload }) => {
       <p style={{ margin: "0 0 6px", color: "white", fontWeight: 500 }}>
         {entry.name}
       </p>
-      <p style={{ margin: 0, color: "var(--color-pizzabi-gold)" }}>Orders: {entry.value}</p>
+      <p style={{ margin: 0, color: "var(--color-pizzabi-gold)" }}>
+        Orders: {entry.value}
+      </p>
     </div>
   )
 }
@@ -63,36 +65,57 @@ const CustomizedContent = (props) => {
         }}
         rx={10}
       />
-      <text
-        x={x + 10}
-        y={y + 20}
-        fill="white"
-        fontSize={12}
-        fontWeight={500}
-      >
+      <text x={x + 10} y={y + 20} fill="white" fontSize={12} fontWeight={500}>
         {name}
       </text>
     </g>
   )
 }
 
-export default function ChartTreeMap() {
+export default function ChartTreeMap({ selectedFilters }) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const result = await getTreemapChartData(selectedFilters)
+        setData(result)
+      } catch (error) {
+        console.error("Failed to load treemap data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [selectedFilters])
+
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Pizza Category share</p>
-      <h2 className="text-white font-medium text-lg mb-4">TreeMap · May 1-30, 2024</h2>
+      <h2 className="text-white font-medium text-lg mb-4">
+        TreeMap · May 1-30, 2024
+      </h2>
 
       <ResponsiveContainer width="100%" height={280}>
-        <Treemap
-          data={treemapData}
-          dataKey="value"
-          nameKey="name"
-          aspectRatio={4 / 3}
-          stroke="rgba(255,255,255,0.08)"
-          content={<CustomizedContent />}
-        >
-          <Tooltip content={<CustomTooltip />} />
-        </Treemap>
+        {loading ? (
+          <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
+            Loading chart...
+          </div>
+        ) : (
+          <Treemap
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            aspectRatio={4 / 3}
+            stroke="rgba(255,255,255,0.08)"
+            content={<CustomizedContent />}
+          >
+            <Tooltip content={<CustomTooltip />} />
+          </Treemap>
+        )}
       </ResponsiveContainer>
     </div>
   )
