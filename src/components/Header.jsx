@@ -101,7 +101,7 @@ function ActiveTag({ label, onRemove }) {
   )
 }
 
-export default function PizzaSalesHeader() {
+export default function PizzaSalesHeader({ onFiltersChange }) {
   const [filterOptions, setFilterOptions] = useState({
     cities: [],
     states: [],
@@ -141,6 +141,10 @@ export default function PizzaSalesHeader() {
     }
     fetchFilters()
   }, [])
+
+  useEffect(() => {
+    onFiltersChange?.(selectedFilters)
+  }, [selectedFilters, onFiltersChange])
 
   const filtersConfig = useMemo(
     () => [
