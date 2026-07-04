@@ -1,16 +1,10 @@
-import React from "react"
-import {
-  TrendingUp,
-  MapPin,
-  Package,
-  Zap,
-  Star,
-} from "lucide-react"
+import React, { useMemo } from "react"
+import { TrendingUp, MapPin, Package, Zap, Star } from "lucide-react"
 
 function InsightCard({ icon, title, value, description, color }) {
   return (
-    <div 
-      className="rounded-2xl border p-4 shadow-sm transition-all duration-200 cursor-pointer" 
+    <div
+      className="rounded-2xl border p-4 shadow-sm transition-all duration-200 cursor-pointer"
       style={{ background: "#1a1d27", borderColor: "#2a2d3a" }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "#f5a623"
@@ -20,7 +14,9 @@ function InsightCard({ icon, title, value, description, color }) {
       }}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-lg flex-shrink-0 ${color}`}>
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-lg shrink-0 ${color}`}
+        >
           {icon}
         </div>
 
@@ -34,44 +30,88 @@ function InsightCard({ icon, title, value, description, color }) {
   )
 }
 
-export default function KeyInsights() {
-  const insights = [
-    {
-      icon: <Star className="h-6 w-6 text-pizzabi-gold" />,
-      title: "Best Seller of the Month",
-      value: "Margherita",
-      description: "Margherita was the top-selling pizza with 2,436 pizzas sold.",
-      color: "bg-yellow-500/15",
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6 text-pizzabi-amber" />,
-      title: "Best Performance",
-      value: "Pepperoni",
-      description: "Pepperoni generated the highest revenue at $1,429K.",
-      color: "bg-orange-500/15",
-    },
-    {
-      icon: <MapPin className="h-6 w-6 text-pizzabi-teal" />,
-      title: "Regional Favorite",
-      value: "BBQ Chicken",
-      description: "BBQ Chicken performs best at Downtown and City Center stores.",
-      color: "bg-cyan-500/15",
-    },
-    {
-      icon: <Package className="h-6 w-6 text-pizzabi-red" />,
-      title: "Size Strategy",
-      value: "Large (36.7%)",
-      description: "Large pizzas contribute the most to sales revenue.",
-      color: "bg-red-500/15",
-    },
-    {
-      icon: <Zap className="h-6 w-6 text-pizzabi-green" />,
-      title: "Launch Comparison",
-      value: "BBQ Chicken",
-      description: "New BBQ Chicken pizza outsold last month by 18%.",
-      color: "bg-green-500/15",
-    },
-  ]
+export default function KeyInsights({ overviewData, loading, error }) {
+  const insights = useMemo(() => {
+    if (!overviewData) {
+      return []
+    }
+
+    const {
+      kpiMetrics = {},
+      categoryData = [],
+      sizeData = [],
+      radarData = [],
+    } = overviewData
+    const topCategory = [...categoryData].sort((a, b) => b.orders - a.orders)[0]
+    const topSize = [...sizeData].sort((a, b) => b.value - a.value)[0]
+    const topRegion = [...radarData].sort((a, b) => b.orders - a.orders)[0]
+
+    return [
+      {
+        icon: <Star className="h-6 w-6 text-pizzabi-gold" />,
+        title: "Best Seller of the Month",
+        value: topCategory?.name || "No data",
+        description: topCategory
+          ? `${topCategory.name} leads the selected filter set by ${topCategory.orders} orders.`
+          : "No category performance data is available for the current filters.",
+        color: "bg-yellow-500/15",
+      },
+      {
+        icon: <TrendingUp className="h-6 w-6 text-pizzabi-amber" />,
+        title: "Best Performance",
+        value: `$${Number(kpiMetrics.totalRevenue?.value || 0).toLocaleString()}`,
+        description: `Revenue performance is ${kpiMetrics.totalRevenue?.delta || "currently unavailable"}.`,
+        color: "bg-orange-500/15",
+      },
+      {
+        icon: <MapPin className="h-6 w-6 text-pizzabi-teal" />,
+        title: "Regional Favorite",
+        value: topRegion?.region || "No data",
+        description: topRegion
+          ? `${topRegion.region} is the strongest region in the current selection.`
+          : "No regional data is available for the current filters.",
+        color: "bg-cyan-500/15",
+      },
+      {
+        icon: <Package className="h-6 w-6 text-pizzabi-red" />,
+        title: "Size Strategy",
+        value: topSize?.name || "No data",
+        description: topSize
+          ? `${topSize.name} is the most represented size in the current filter scope.`
+          : "No size breakdown is available for the current filters.",
+        color: "bg-red-500/15",
+      },
+      {
+        icon: <Zap className="h-6 w-6 text-pizzabi-green" />,
+        title: "Growth Signal",
+        value: `${kpiMetrics.totalOrders?.value || 0} orders`,
+        description: kpiMetrics.totalOrders?.delta
+          ? `Order volume change is ${kpiMetrics.totalOrders.delta}.`
+          : "Order volume data is currently unavailable.",
+        color: "bg-green-500/15",
+      },
+    ]
+  }, [overviewData])
+
+  if (loading && !overviewData) {
+    return (
+      <div className="w-full">
+        <div className="mb-4 h-6 w-48 animate-pulse rounded bg-white/10" />
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-28 animate-pulse rounded-2xl border border-white/10 bg-white/5"
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !overviewData) {
+    return <p className="text-sm text-pizzabi-red">{error}</p>
+  }
 
   return (
     <div className="w-full">

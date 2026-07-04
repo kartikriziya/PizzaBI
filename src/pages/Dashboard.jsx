@@ -1,24 +1,16 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 import PizzaSalesHeader from "../components/Header"
-import PizzaSalesCharts from "../components/PizzaSalesCharts"
 import Charts from "../components/Charts"
-import axios from "axios"
 
-export default function Dashboard() {
-  const [selectedFilters, setSelectedFilters] = useState({
-    startDate: "",
-    endDate: "",
-    city: "",
-    state: "",
-    category: "",
-    size: "",
-  })
-
+export default function Dashboard({ selectedFilters, onFiltersChange }) {
   return (
     <div className="min-h-screen bg-pizzabi-main">
       {/* Sticky header inside the dashboard content area */}
       <div className="sticky top-0 z-10">
-        <PizzaSalesHeader onFiltersChange={setSelectedFilters} />
+        <PizzaSalesHeader
+          selectedFilters={selectedFilters}
+          onFiltersChange={onFiltersChange}
+        />
       </div>
 
       {/* Main content below the sticky header */}

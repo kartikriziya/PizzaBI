@@ -1,36 +1,80 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import MainLayout from "../layouts/MainLayout" // Renamed layout component
-import Dashboard from "../pages/Dashboard" // Your new empty default page
+import { useEffect, useRef, useState } from "react"
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import MainLayout from "../layouts/MainLayout"
+import Dashboard from "../pages/Dashboard"
 import OverviewDashboard from "../pages/OverviewDashboard"
 import SampleDashboard from "../pages/SampleDashboard"
 import UploadFile from "../components/UploadFile"
 
-export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
+const DEFAULT_FILTERS = {
+  startDate: "",
+  endDate: "",
+  city: "",
+  state: "",
+  category: "",
+  size: "",
+}
+
+const HEADER_ROUTES = new Set(["/", "/overview"])
+
+function AppRouterContent({ isDarkMode, toggleTheme, onLogout }) {
+  const location = useLocation()
+  const previousPathRef = useRef(location.pathname)
+  const [selectedFilters, setSelectedFilters] = useState(DEFAULT_FILTERS)
+
+  useEffect(() => {
+    const previousPath = previousPathRef.current
+    const currentHasHeader = HEADER_ROUTES.has(location.pathname)
+    const previousHasHeader = HEADER_ROUTES.has(previousPath)
+
+    if (currentHasHeader !== previousHasHeader) {
+      setSelectedFilters(DEFAULT_FILTERS)
+    }
+
+    previousPathRef.current = location.pathname
+  }, [location.pathname])
+
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Parent Layout Route: This renders the persistent shell layout (Sidebar).
-          We pass the theme and logout props down to the MainLayout shell.
-        */}
+    <Routes>
+      <Route
+        element={
+          <MainLayout
+            isDarkMode={isDarkMode}
+            toggleTheme={toggleTheme}
+            onLogout={onLogout}
+          />
+        }
+      >
         <Route
+          path="/"
           element={
-            <MainLayout
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              onLogout={onLogout}
+            <Dashboard
+              selectedFilters={selectedFilters}
+              onFiltersChange={setSelectedFilters}
             />
           }
-        >
-          {/* Nested Child Routes: These get dropped dynamically into the 
-            <Outlet /> placeholder inside MainLayout based on the URL path.
-          */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/overview" element={<OverviewDashboard />} />
-          <Route path="/upload" element={<UploadFile />} />
-          <Route path="/statistics" element={<SampleDashboard />} />
-          <Route path="/sample-dashboard" element={<SampleDashboard />} />
-        </Route>
-      </Routes>
+        />
+        <Route
+          path="/overview"
+          element={
+            <OverviewDashboard
+              selectedFilters={selectedFilters}
+              onFiltersChange={setSelectedFilters}
+            />
+          }
+        />
+        <Route path="/upload" element={<UploadFile />} />
+        <Route path="/statistics" element={<SampleDashboard />} />
+        <Route path="/sample-dashboard" element={<SampleDashboard />} />
+      </Route>
+    </Routes>
+  )
+}
+
+export default function AppRouter(props) {
+  return (
+    <BrowserRouter>
+      <AppRouterContent {...props} />
     </BrowserRouter>
   )
 }

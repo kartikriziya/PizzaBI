@@ -101,7 +101,19 @@ function ActiveTag({ label, onRemove }) {
   )
 }
 
-export default function PizzaSalesHeader({ onFiltersChange }) {
+const DEFAULT_FILTERS = {
+  startDate: "",
+  endDate: "",
+  city: "",
+  state: "",
+  category: "",
+  size: "",
+}
+
+export default function PizzaSalesHeader({
+  onFiltersChange,
+  selectedFilters: selectedFiltersProp = DEFAULT_FILTERS,
+}) {
   const [filterOptions, setFilterOptions] = useState({
     cities: [],
     states: [],
@@ -109,14 +121,7 @@ export default function PizzaSalesHeader({ onFiltersChange }) {
     sizes: [],
   })
 
-  const [selectedFilters, setSelectedFilters] = useState({
-    startDate: "",
-    endDate: "",
-    city: "",
-    state: "",
-    category: "",
-    size: "",
-  })
+  const [selectedFilters, setSelectedFilters] = useState(selectedFiltersProp)
 
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -141,6 +146,10 @@ export default function PizzaSalesHeader({ onFiltersChange }) {
     }
     fetchFilters()
   }, [])
+
+  useEffect(() => {
+    setSelectedFilters(selectedFiltersProp)
+  }, [selectedFiltersProp])
 
   useEffect(() => {
     onFiltersChange?.(selectedFilters)
@@ -209,14 +218,7 @@ export default function PizzaSalesHeader({ onFiltersChange }) {
   }
 
   const clearAll = () => {
-    setSelectedFilters({
-      startDate: "",
-      endDate: "",
-      city: "",
-      state: "",
-      category: "",
-      size: "",
-    })
+    setSelectedFilters(DEFAULT_FILTERS)
   }
 
   const toggleDropdown = (id) => {

@@ -372,7 +372,7 @@ export async function getRadarChartData(filters = {}) {
   ])
 
   return result.rows.map((row) => ({
-    region: region || "Unknown",
+    region: row.region || "Unknown",
     orders: Number(row.orders || 0),
   }))
 }

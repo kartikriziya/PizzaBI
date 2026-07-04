@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useMemo } from "react"
 
 const C = {
   bg: "#0f1117",
@@ -13,39 +13,77 @@ const C = {
   bright: "#f9fafb",
 }
 
-export default function RecommendationsTable() {
-  const recommendations = [
-    {
-      category: "Top Menu Item",
-      recommendation: "Margherita Pizza",
-      rationale: "Feature as best seller - highly profitable and customer favorite",
-      icon: "🍽️",
-    },
-    {
-      category: "Premium Recommendation",
-      recommendation: "Pepperoni Pizza",
-      rationale: "Highest revenue generator - optimize pricing and promote",
-      icon: "🏆",
-    },
-    {
-      category: "Regional Strategy",
-      recommendation: "BBQ Chicken Focus",
-      rationale: "Dominant in key markets - expand availability in Downtown & City Center",
-      icon: "👑",
-    },
-    {
-      category: "Bundle Strategy",
-      recommendation: "Large Size Combos",
-      rationale: "Largest profit contributor - create combo deals for large pizzas",
-      icon: "🎯",
-    },
-    {
-      category: "New Launch Push",
-      recommendation: "BBQ Chicken Special",
-      rationale: "New launch performing well - increase promotional activities",
-      icon: "💡",
-    },
-  ]
+export default function RecommendationsTable({ overviewData, loading, error }) {
+  const recommendations = useMemo(() => {
+    if (!overviewData) {
+      return []
+    }
+
+    const {
+      kpiMetrics = {},
+      categoryData = [],
+      sizeData = [],
+      radarData = [],
+    } = overviewData
+    const topCategory = [...categoryData].sort((a, b) => b.orders - a.orders)[0]
+    const topSize = [...sizeData].sort((a, b) => b.value - a.value)[0]
+    const topRegion = [...radarData].sort((a, b) => b.orders - a.orders)[0]
+
+    return [
+      {
+        category: "Top Menu Item",
+        recommendation: topCategory?.name || "No data",
+        rationale: topCategory
+          ? `Prioritize ${topCategory.name} because it is leading the current selection with ${topCategory.orders} orders.`
+          : "There is not enough category performance data to recommend a top menu item.",
+        icon: "🍽️",
+      },
+      {
+        category: "Revenue Focus",
+        recommendation: `$${Number(kpiMetrics.totalRevenue?.value || 0).toLocaleString()}`,
+        rationale: kpiMetrics.totalRevenue?.delta
+          ? `Revenue is tracking ${kpiMetrics.totalRevenue.delta}.`
+          : "Revenue trend is currently unavailable.",
+        icon: "💰",
+      },
+      {
+        category: "Regional Strategy",
+        recommendation: topRegion?.region || "No data",
+        rationale: topRegion
+          ? `Double down on ${topRegion.region} as the strongest region in the active filter set.`
+          : "No regional performance data is available.",
+        icon: "👑",
+      },
+      {
+        category: "Bundle Strategy",
+        recommendation: topSize?.name || "No data",
+        rationale: topSize
+          ? `Create bundle offers around ${topSize.name} to capture the most common size preference.`
+          : "No size distribution data is available.",
+        icon: "🎯",
+      },
+      {
+        category: "Growth Opportunity",
+        recommendation: `${kpiMetrics.totalOrders?.value || 0} orders`,
+        rationale: kpiMetrics.totalOrders?.delta
+          ? `Order volume is changing by ${kpiMetrics.totalOrders.delta}.`
+          : "Order volume movement is currently unavailable.",
+        icon: "💡",
+      },
+    ]
+  }, [overviewData])
+
+  if (loading && !overviewData) {
+    return (
+      <div className="rounded-lg border border-white/10 p-4 text-sm text-pizzabi-muted">
+        Loading recommendations...
+      </div>
+    )
+  }
+
+  if (error && !overviewData) {
+    return <p className="text-sm text-pizzabi-red">{error}</p>
+  }
 
   return (
     <div
