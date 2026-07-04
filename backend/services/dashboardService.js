@@ -1,11 +1,16 @@
 import pool from "../db/index.js"
 
+/**
+ * Clean and normalize filter values to prevent null/undefined issues.
+ */
 function normalizeValue(value) {
   if (value === undefined || value === null) return ""
-  const text = String(value).trim()
-  return text
+  return String(value).trim()
 }
 
+/**
+ * Combines store and date-based conditions into a structured array.
+ */
 function buildBaseConditions(filters) {
   const conditions = []
 
@@ -29,6 +34,9 @@ function buildBaseConditions(filters) {
   return conditions
 }
 
+/**
+ * Combines product line items-based conditions (category, size).
+ */
 function buildItemConditions(filters) {
   const conditions = []
 
@@ -44,9 +52,13 @@ function buildItemConditions(filters) {
   return conditions
 }
 
+/**
+ * Dynamically replaces "?" placeholders with specific native PostgreSQL $1, $2 parameter tokens
+ * and aggregates them into an adjustable starting array index tracker.
+ */
 function buildParameterizedClause(conditions, startIndex = 1) {
   if (conditions.length === 0) {
-    return { sql: "", values: [], nextIndex: startIndex }
+    return { sql: "", values: [], nextIndex: startIndex, clauses: [] }
   }
 
   const values = []
@@ -60,12 +72,15 @@ function buildParameterizedClause(conditions, startIndex = 1) {
   })
 
   return {
-    sql: `WHERE ${sqlClauses.join(" AND ")}`,
+    clauses: sqlClauses,
     values,
     nextIndex: currentIndex,
   }
 }
 
+/**
+ * Formats data deltas dynamically showing structural direction comparisons vs baseline metrics.
+ */
 function formatDelta(value, baseline) {
   if (baseline === 0) {
     return value === 0 ? "No change" : "▲ 100.0% vs baseline"
@@ -76,6 +91,9 @@ function formatDelta(value, baseline) {
   return `${sign} ${Math.abs(change).toFixed(1)}% vs baseline`
 }
 
+/**
+ * Orchestrates unified parsing of base and item scopes while holding sequential variable indexes.
+ */
 function buildFilterClause(filters) {
   const baseFilters = {
     city: filters.city || "",
@@ -89,34 +107,50 @@ function buildFilterClause(filters) {
   const orderConditions = buildBaseConditions(baseFilters)
   const itemConditions = buildItemConditions(baseFilters)
 
-  const baseQuery = buildParameterizedClause(orderConditions)
+  const baseQuery = buildParameterizedClause(orderConditions, 1)
   const itemQuery = buildParameterizedClause(
     itemConditions,
     baseQuery.nextIndex,
   )
 
-  return { baseQuery, itemQuery }
+  // Consolidates multiple filter clauses smoothly into a valid SQL WHERE statement
+  let whereSql = ""
+  const allClauses = [...baseQuery.clauses, ...itemQuery.clauses]
+  if (allClauses.length > 0) {
+    whereSql = `WHERE ${allClauses.join(" AND ")}`
+  }
+
+  return {
+    baseQuery,
+    itemQuery,
+    whereSql,
+  }
 }
 
+/**
+ * Fetches higher-level metric boxes matching requested parameters vs historical total baselines.
+ */
 export async function getKpiMetrics(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
+  // Checks if item scope limits exist, dynamically chaining tables when needed.
   const query = `
     SELECT
       COUNT(DISTINCT orders.order_id)::int AS order_count,
       COALESCE(SUM(orders.total), 0)::numeric AS revenue,
-      COALESCE(SUM(item_counts.item_count), 0)::int AS pizzas_sold,
+      COALESCE(SUM(orders.n_items), 0)::int AS pizzas_sold,
       COUNT(DISTINCT orders.customer_id)::int AS customer_count
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id, COUNT(*)::int AS item_count
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      ${itemQuery.sql}
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
-    ${baseQuery.sql}
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    `
+        : ""
+    }
+    ${whereSql}
   `
 
   const filteredResult = await pool.query(query, [
@@ -125,20 +159,15 @@ export async function getKpiMetrics(filters = {}) {
   ])
   const row = filteredResult.rows[0]
 
+  // Baseline performance query tracking total historic numbers
   const baselineQuery = `
     SELECT
       COUNT(DISTINCT orders.order_id)::int AS order_count,
       COALESCE(SUM(orders.total), 0)::numeric AS revenue,
-      COALESCE(SUM(item_counts.item_count), 0)::int AS pizzas_sold,
+      COALESCE(SUM(orders.n_items), 0)::int AS pizzas_sold,
       COUNT(DISTINCT orders.customer_id)::int AS customer_count
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id, COUNT(*)::int AS item_count
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
   `
 
   const baselineResult = await pool.query(baselineQuery)
@@ -162,10 +191,7 @@ export async function getKpiMetrics(filters = {}) {
       value: revenue,
       delta: formatDelta(revenue, baselineRevenue),
     },
-    totalOrders: {
-      value: orders,
-      delta: formatDelta(orders, baselineOrders),
-    },
+    totalOrders: { value: orders, delta: formatDelta(orders, baselineOrders) },
     pizzasSold: {
       value: pizzasSold,
       delta: formatDelta(pizzasSold, baselinePizzas),
@@ -181,8 +207,11 @@ export async function getKpiMetrics(filters = {}) {
   }
 }
 
+/**
+ * Returns timeline day data for multi-line visual chart streams.
+ */
 export async function getLineChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -191,14 +220,15 @@ export async function getLineChartData(filters = {}) {
       COUNT(DISTINCT orders.order_id)::int AS orders
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      ${itemQuery.sql}
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
-    ${baseQuery.sql}
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    `
+        : ""
+    }
+    ${whereSql}
     GROUP BY TO_CHAR(orders.order_date, 'DD')
     ORDER BY MIN(orders.order_date)
   `
@@ -215,8 +245,11 @@ export async function getLineChartData(filters = {}) {
   }))
 }
 
+/**
+ * Groups metrics to show performance distributions by pizza categories.
+ */
 export async function getCategoryChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -226,8 +259,7 @@ export async function getCategoryChartData(filters = {}) {
     LEFT JOIN stores ON orders.store_id = stores.store_id
     LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
     LEFT JOIN products p ON oi.sku = p.sku
-    ${itemQuery.sql}
-    ${baseQuery.sql}
+    ${whereSql}
     GROUP BY p.category
     ORDER BY orders DESC
   `
@@ -243,8 +275,11 @@ export async function getCategoryChartData(filters = {}) {
   }))
 }
 
+/**
+ * Generates sizing scale counts for product distributions.
+ */
 export async function getSizeChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -254,8 +289,7 @@ export async function getSizeChartData(filters = {}) {
     LEFT JOIN stores ON orders.store_id = stores.store_id
     LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
     LEFT JOIN products p ON oi.sku = p.sku
-    ${itemQuery.sql}
-    ${baseQuery.sql}
+    ${whereSql}
     GROUP BY p.size
     ORDER BY value DESC
   `
@@ -271,8 +305,11 @@ export async function getSizeChartData(filters = {}) {
   }))
 }
 
+/**
+ * Aggregates daily area performance structures.
+ */
 export async function getAreaChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -280,14 +317,15 @@ export async function getAreaChartData(filters = {}) {
       SUM(orders.total)::numeric AS revenue
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      ${itemQuery.sql}
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
-    ${baseQuery.sql}
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    `
+        : ""
+    }
+    ${whereSql}
     GROUP BY TO_CHAR(orders.order_date, 'DD')
     ORDER BY MIN(orders.order_date)
   `
@@ -303,8 +341,11 @@ export async function getAreaChartData(filters = {}) {
   }))
 }
 
+/**
+ * Gathers geographic distributions mapped out by shop states.
+ */
 export async function getRadarChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -312,14 +353,15 @@ export async function getRadarChartData(filters = {}) {
       COUNT(DISTINCT orders.order_id)::int AS orders
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      ${itemQuery.sql}
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
-    ${baseQuery.sql}
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    `
+        : ""
+    }
+    ${whereSql}
     GROUP BY stores.state
     ORDER BY orders DESC
   `
@@ -330,13 +372,16 @@ export async function getRadarChartData(filters = {}) {
   ])
 
   return result.rows.map((row) => ({
-    region: row.region || "Unknown",
+    region: region || "Unknown",
     orders: Number(row.orders || 0),
   }))
 }
 
+/**
+ * Resolves performance rates mapped out by day-of-week groupings.
+ */
 export async function getWeekdayChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
     SELECT
@@ -344,14 +389,15 @@ export async function getWeekdayChartData(filters = {}) {
       COUNT(DISTINCT orders.order_id)::int AS orders
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN (
-      SELECT oi.order_id
-      FROM orderitems oi
-      LEFT JOIN products p ON oi.sku = p.sku
-      ${itemQuery.sql}
-      GROUP BY oi.order_id
-    ) item_counts ON item_counts.order_id = orders.order_id
-    ${baseQuery.sql}
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products p ON oi.sku = p.sku
+    `
+        : ""
+    }
+    ${whereSql}
     GROUP BY TO_CHAR(orders.order_date, 'Dy')
     ORDER BY MIN(orders.order_date)
   `
@@ -364,33 +410,5 @@ export async function getWeekdayChartData(filters = {}) {
   return result.rows.map((row) => ({
     day: row.day,
     orders: Number(row.orders || 0),
-  }))
-}
-
-export async function getTreemapChartData(filters = {}) {
-  const { baseQuery, itemQuery } = buildFilterClause(filters)
-
-  const query = `
-    SELECT
-      p.category AS name,
-      COUNT(DISTINCT orders.order_id)::int AS value
-    FROM orders
-    LEFT JOIN stores ON orders.store_id = stores.store_id
-    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
-    LEFT JOIN products p ON oi.sku = p.sku
-    ${itemQuery.sql}
-    ${baseQuery.sql}
-    GROUP BY p.category
-    ORDER BY value DESC
-  `
-
-  const result = await pool.query(query, [
-    ...baseQuery.values,
-    ...itemQuery.values,
-  ])
-
-  return result.rows.map((row) => ({
-    name: row.name || "Uncategorized",
-    value: Number(row.value || 0),
   }))
 }
