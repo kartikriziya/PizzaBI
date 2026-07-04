@@ -1,0 +1,8 @@
+import axios from "axios"
+
+const API_URL = "http://localhost:5000/api"
+
+export const getFilters = async () => {
+  const response = await axios.get(`${API_URL}/filters`)
+  return response.data
+}
