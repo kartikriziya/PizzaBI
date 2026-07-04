@@ -1,7 +1,8 @@
-import React from "react"
+import React, { useEffect } from "react"
 import PizzaSalesHeader from "../components/Header"
 import PizzaSalesCharts from "../components/PizzaSalesCharts"
 import Charts from "../components/Charts"
+import axios from "axios"
 
 export default function Dashboard() {
   return (
