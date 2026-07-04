@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 
 import csvRoutes from "./routes/csv.js"
 import filterRoutes from "./routes/filterRoutes.js"
+import kpiRoutes from "./routes/kpiRoutes.js"
 import userRoutes from "./routes/users.js"
 
 dotenv.config()
@@ -17,6 +18,7 @@ app.get("/", (req, res) => res.send("PERN Backend Running 🚀"))
 app.use("/users", userRoutes)
 app.use("/api/csv", csvRoutes)
 app.use("/api/filters", filterRoutes)
+app.use("/api/kpi", kpiRoutes)
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000

@@ -123,24 +123,56 @@ export default function PizzaSalesHeader() {
   const [error, setError] = useState("")
 
   useEffect(() => {
+    let active = true
+
     const fetchFilters = async () => {
+      setLoading(true)
+      setError("")
+
       try {
-        const data = await getFilters()
+        const query = {
+          city: selectedFilters.city || undefined,
+          state: selectedFilters.state || undefined,
+          category: selectedFilters.category || undefined,
+          size: selectedFilters.size || undefined,
+        }
+
+        const data = await getFilters(query)
+        if (!active) return
+
         setFilterOptions({
           cities: data.cities || [],
           states: data.states || [],
           categories: data.categories || [],
           sizes: data.sizes || [],
         })
+
+        if (data.filters) {
+          setSelectedFilters((prev) => ({
+            ...prev,
+            city: data.filters.city ?? prev.city,
+            state: data.filters.state ?? prev.state,
+            category: data.filters.category ?? prev.category,
+            size: data.filters.size ?? prev.size,
+          }))
+        }
       } catch (err) {
         console.error(err)
-        setError("Unable to load filters.")
+        if (active) {
+          setError("Unable to load filters.")
+        }
       } finally {
-        setLoading(false)
+        if (active) {
+          setLoading(false)
+        }
       }
     }
+
     fetchFilters()
-  }, [])
+    return () => {
+      active = false
+    }
+  }, [selectedFilters.city, selectedFilters.state, selectedFilters.category, selectedFilters.size])
 
   const filtersConfig = useMemo(
     () => [

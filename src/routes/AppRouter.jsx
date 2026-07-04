@@ -4,6 +4,7 @@ import Dashboard from "../pages/Dashboard" // Your new empty default page
 import OverviewDashboard from "../pages/OverviewDashboard"
 import SampleDashboard from "../pages/SampleDashboard"
 import UploadFile from "../components/UploadFile"
+import BackendFilterPage from "../pages/BackendFilterPage"
 
 export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
   return (
@@ -29,6 +30,7 @@ export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
           <Route path="/upload" element={<UploadFile />} />
           <Route path="/statistics" element={<SampleDashboard />} />
           <Route path="/sample-dashboard" element={<SampleDashboard />} />
+          <Route path="/backend-filter-demo" element={<BackendFilterPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

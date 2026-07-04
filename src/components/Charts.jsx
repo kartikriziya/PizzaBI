@@ -18,9 +18,9 @@ export default function Charts() {
           <OrdersByWeekday />
           <ChartPie />
           <ChartRadar />
+          <ChartArea />
         </div>
       </div>
-      <ChartArea />
     </div>
   )
 }
