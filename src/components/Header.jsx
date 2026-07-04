@@ -109,7 +109,7 @@ export default function PizzaSalesHeader() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-pizzabi-gold font-bold text-lg md:text-xl leading-tight">
-            Pizza Sales Overview
+            Pizza Sales Filters
           </h1>
           <p className="text-pizzabi-muted text-xs md:text-sm mt-0.5">
             Track key metrics and performance insights across all stores.

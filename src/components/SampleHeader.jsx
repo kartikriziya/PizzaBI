@@ -164,7 +164,7 @@ const FILTER_CONFIG = [
  * onFiltersChange: (filters) => void    – called with full updated filters object
  */
 export default function SampleHeader({
-  title = "Pizza Sales Overview",
+  title = "Pizza Sales Filters",
   subtitle = "Track key metrics and performance insights across all stores.",
   filters: externalFilters,
   onFiltersChange,

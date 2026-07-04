@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import MainLayout from "../layouts/MainLayout" // Renamed layout component
 import Dashboard from "../pages/Dashboard" // Your new empty default page
+import OverviewDashboard from "../pages/OverviewDashboard"
 import SampleDashboard from "../pages/SampleDashboard"
 import UploadFile from "../components/UploadFile"
 
@@ -24,6 +25,7 @@ export default function AppRouter({ isDarkMode, toggleTheme, onLogout }) {
             <Outlet /> placeholder inside MainLayout based on the URL path.
           */}
           <Route path="/" element={<Dashboard />} />
+          <Route path="/overview" element={<OverviewDashboard />} />
           <Route path="/upload" element={<UploadFile />} />
           <Route path="/statistics" element={<SampleDashboard />} />
           <Route path="/sample-dashboard" element={<SampleDashboard />} />

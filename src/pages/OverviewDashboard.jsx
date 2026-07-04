@@ -1,9 +1,8 @@
 import React from "react"
 import PizzaSalesHeader from "../components/Header"
-import PizzaSalesCharts from "../components/PizzaSalesCharts"
-import Charts from "../components/Charts"
+import OverviewContent from "../components/OverviewContent"
 
-export default function Dashboard() {
+export default function OverviewDashboard() {
   return (
     <div className="min-h-screen bg-pizzabi-main">
       {/* Sticky header inside the dashboard content area */}
@@ -15,17 +14,7 @@ export default function Dashboard() {
       <main className="w-full">
         {/* Responsive chart container for future chart components */}
         <section className="w-full bg-pizzabi-card border border-pizzabi-muted/10 p-4 md:p-6">
-          <div className="space-y-4 mb-6">
-            <h1 className="text-2xl font-bold text-pizzabi-gold">
-              Main Dashboard
-            </h1>
-            <p className="text-pizzabi-muted text-sm">
-              Welcome back! Your core real-time analytics monitoring cards and
-              sales data views will mount inside this frame.
-            </p>
-          </div>
-          {/* <PizzaSalesCharts /> */}
-          <Charts />
+          <OverviewContent />
         </section>
       </main>
     </div>

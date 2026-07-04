@@ -452,34 +452,6 @@ export default function SampleContent({ kpi = {}, chart = {} }) {
           </section>
         </>
       )}
-
-      {/* ── KPI row ── */}
-      <section className="mb-4">
-        <h2
-          className="text-xs font-semibold uppercase tracking-widest mb-3"
-          style={{ color: C.muted }}
-        >
-          Key Metrics
-        </h2>
-        {/* add more <KpiCard /> here to build a full KPI row */}
-        <div className="flex flex-wrap gap-3">
-          <KpiCard {...kpi} />
-        </div>
-      </section>
-
-      {/* ── Chart row ── */}
-      <section>
-        <h2
-          className="text-xs font-semibold uppercase tracking-widest mb-3"
-          style={{ color: C.muted }}
-        >
-          Charts
-        </h2>
-        {/* add more <BarChartCard /> here for a multi-chart grid */}
-        <div className="grid grid-cols-1 gap-4" style={{ maxWidth: 520 }}>
-          <BarChartCard {...chart} />
-        </div>
-      </section>
     </div>
   )
 }
