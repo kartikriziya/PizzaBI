@@ -35,7 +35,7 @@ export default function Dashboard() {
             </p>
           </div>
           {/* <PizzaSalesCharts /> */}
-          <Charts />
+          <Charts selectedFilters={selectedFilters} />
         </section>
       </main>
     </div>
