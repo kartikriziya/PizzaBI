@@ -2,6 +2,7 @@ import React from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import Sidebar, { SidebarItem } from "../components/Sidebar"
 import { BarChart3, LayoutDashboard, Upload, Eye } from "lucide-react"
+import PizzaSalesHeader from "../components/Header"
 
 // Routes where the filter bar should NOT appear
 const NO_HEADER_ROUTES = ["/upload"]
