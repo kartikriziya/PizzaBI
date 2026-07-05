@@ -14,14 +14,14 @@ const PIZZAS = [
 // Symmetric co-occurrence — how often two pizzas appear in the same order
 const MATRIX = [
   //  Marg  Pepp   Haw   Sal   Veg   BBQ   4K   Tonn
-  [    0,   342,   187,  203,  156,   98,  145,   87 ],
-  [  342,     0,   298,  267,  112,  189,  134,   76 ],
-  [  187,   298,     0,  145,   98,  167,   89,  134 ],
-  [  203,   267,   145,    0,   67,  134,  112,   89 ],
-  [  156,   112,    98,   67,    0,   78,  145,   56 ],
-  [   98,   189,   167,  134,   78,    0,   67,   45 ],
-  [  145,   134,    89,  112,  145,   67,    0,   78 ],
-  [   87,    76,   134,   89,   56,   45,   78,    0 ],
+  [0, 342, 187, 203, 156, 98, 145, 87],
+  [342, 0, 298, 267, 112, 189, 134, 76],
+  [187, 298, 0, 145, 98, 167, 89, 134],
+  [203, 267, 145, 0, 67, 134, 112, 89],
+  [156, 112, 98, 67, 0, 78, 145, 56],
+  [98, 189, 167, 134, 78, 0, 67, 45],
+  [145, 134, 89, 112, 145, 67, 0, 78],
+  [87, 76, 134, 89, 56, 45, 78, 0],
 ]
 
 const MAX_VAL = Math.max(...MATRIX.flat())
@@ -33,10 +33,10 @@ function cellBg(value, isDiagonal) {
 }
 
 // Layout constants
-const CELL      = 76   // cell width & height in px
-const GAP       = 5    // gap between cells
-const ROW_LBL_W = 120  // row-label column width
-const COL_HDR_H = 110  // column-header area height
+const CELL = 76 // cell width & height in px
+const GAP = 5 // gap between cells
+const ROW_LBL_W = 120 // row-label column width
+const COL_HDR_H = 110 // column-header area height
 
 export default function ChartCoMatrix() {
   const [tooltip, setTooltip] = useState(null)
@@ -49,12 +49,12 @@ export default function ChartCoMatrix() {
         Pizza Co-Occurrence Matrix
       </h2>
       <p className="text-pizzabi-muted text-xs mb-6">
-        Wie oft werden zwei Pizzen gemeinsam in einer Bestellung bestellt — hover für Details
+        Wie oft werden zwei Pizzen gemeinsam in einer Bestellung bestellt —
+        hover für Details
       </p>
 
       <div className="overflow-x-auto pb-2">
         <div style={{ width: totalW }}>
-
           {/* ── Column headers (vertical text, bottom-aligned) ── */}
           <div style={{ display: "flex", marginLeft: ROW_LBL_W }}>
             {PIZZAS.map((name) => (
@@ -92,7 +92,11 @@ export default function ChartCoMatrix() {
           {PIZZAS.map((rowName, ri) => (
             <div
               key={rowName}
-              style={{ display: "flex", alignItems: "center", marginBottom: GAP }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: GAP,
+              }}
             >
               {/* Row label */}
               <div
@@ -113,9 +117,9 @@ export default function ChartCoMatrix() {
 
               {/* Cells */}
               {PIZZAS.map((_, ci) => {
-                const value      = MATRIX[ri][ci]
+                const value = MATRIX[ri][ci]
                 const isDiagonal = ri === ci
-                const isHovered  = tooltip?.ri === ri && tooltip?.ci === ci
+                const isHovered = tooltip?.ri === ri && tooltip?.ci === ci
 
                 return (
                   <div
@@ -127,13 +131,16 @@ export default function ChartCoMatrix() {
                       flexShrink: 0,
                       borderRadius: 6,
                       background: cellBg(value, isDiagonal),
-                      outline: isHovered ? "2px solid rgba(255,159,28,0.85)" : "none",
+                      outline: isHovered
+                        ? "2px solid rgba(255,159,28,0.85)"
+                        : "none",
                       outlineOffset: -1,
                       cursor: isDiagonal ? "default" : "crosshair",
                       transition: "outline 80ms",
                     }}
                     onMouseMove={(e) =>
-                      !isDiagonal && setTooltip({ x: e.clientX, y: e.clientY, ri, ci })
+                      !isDiagonal &&
+                      setTooltip({ x: e.clientX, y: e.clientY, ri, ci })
                     }
                     onMouseLeave={() => setTooltip(null)}
                   />
@@ -177,7 +184,7 @@ export default function ChartCoMatrix() {
       {/* ── Fixed tooltip (escapes any overflow clipping) ── */}
       {tooltip && (
         <div
-          className="fixed z-[9999] pointer-events-none rounded-xl border border-pizzabi-muted/20 bg-pizzabi-card px-4 py-2.5 shadow-2xl"
+          className="fixed z-9999 pointer-events-none rounded-xl border border-pizzabi-muted/20 bg-pizzabi-card px-4 py-2.5 shadow-2xl"
           style={{ top: tooltip.y - 80, left: tooltip.x + 18 }}
         >
           <div className="text-sm font-bold text-pizzabi-gold">

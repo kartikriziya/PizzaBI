@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
 import MainLayout from "../layouts/MainLayout"
 import Dashboard from "../pages/Dashboard"
+import StatisticDashboard from "../pages/StatisticDashboad"
 import OverviewDashboard from "../pages/OverviewDashboard"
-import SampleDashboard from "../pages/SampleDashboard"
 import UploadFile from "../components/UploadFile"
 
 const DEFAULT_FILTERS = {
@@ -63,9 +63,16 @@ function AppRouterContent({ isDarkMode, toggleTheme, onLogout }) {
             />
           }
         />
+        <Route
+          path="/statistics"
+          element={
+            <StatisticDashboard
+              selectedFilters={selectedFilters}
+              onFiltersChange={setSelectedFilters}
+            />
+          }
+        />
         <Route path="/upload" element={<UploadFile />} />
-        <Route path="/statistics" element={<SampleDashboard />} />
-        <Route path="/sample-dashboard" element={<SampleDashboard />} />
       </Route>
     </Routes>
   )

@@ -2,7 +2,6 @@ import React from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import Sidebar, { SidebarItem } from "../components/Sidebar"
 import { BarChart3, LayoutDashboard, Upload, Eye } from "lucide-react"
-import PizzaSalesHeader from "../components/Header"
 
 // Routes where the filter bar should NOT appear
 const NO_HEADER_ROUTES = ["/upload"]
@@ -41,9 +40,8 @@ export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
       </Sidebar>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Shared filter bar — shown on Dashboard & Statistics, hidden on Upload */}
-        {showHeader && <PizzaSalesHeader />}
-
+        Shared filter bar — shown on Dashboard & Statistics and Overview, hidden
+        on Upload
         {/* Page content */}
         <div className="flex-1 overflow-auto">
           <Outlet />
