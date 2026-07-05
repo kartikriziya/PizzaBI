@@ -18,9 +18,9 @@ export default function Charts({ selectedFilters }) {
           <OrdersByWeekday selectedFilters={selectedFilters} />
           <ChartPie selectedFilters={selectedFilters} />
           <ChartRadar selectedFilters={selectedFilters} />
+          <ChartArea selectedFilters={selectedFilters} />
         </div>
       </div>
-      <ChartArea selectedFilters={selectedFilters} />
     </div>
   )
 }

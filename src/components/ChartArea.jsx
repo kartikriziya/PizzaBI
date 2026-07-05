@@ -32,12 +32,11 @@ export default function ChartArea({ selectedFilters }) {
   }, [selectedFilters])
 
   return (
-    <div className="w-full">
-      <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
-        <p className="text-pizzabi-muted text-xs mb-0.5">Revenue trend</p>
-        <h2 className="text-white font-medium text-lg mb-4">Daily sales</h2>
+    <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5 md:col-span-2">
+      <p className="text-pizzabi-muted text-xs mb-0.5">Revenue trend</p>
+      <h2 className="text-white font-medium text-lg mb-4">Daily sales</h2>
 
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={240}>
           {loading ? (
             <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
               Loading chart...
