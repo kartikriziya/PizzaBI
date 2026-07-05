@@ -6,9 +6,24 @@ import StatisticDashboard from "../pages/StatisticDashboad"
 import OverviewDashboard from "../pages/OverviewDashboard"
 import UploadFile from "../components/UploadFile"
 
+// ----- Jahn 05.07 ------
+// Default date range = rolling "last 30 days", recomputed on page load/refresh.
+function getDefaultDateRange() {
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 29)
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  }
+}
+// ----- Jahn 05.07 ------
+
 const DEFAULT_FILTERS = {
-  startDate: "",
-  endDate: "",
+  // ----- Jahn 05.07 ------
+  ...getDefaultDateRange(),
+  // ----- Jahn 05.07 ------
   city: "",
   state: "",
   category: "",

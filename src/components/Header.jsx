@@ -9,6 +9,9 @@ import {
   X,
 } from "lucide-react"
 import { getFilters } from "../apis/filterApi.js"
+// ----- Jahn 05.07 ------
+import DateRangePicker, { formatRangeValue } from "./DateRangePicker"
+// ----- Jahn 05.07 ------
 
 function FilterChip({ filter, isOpen, onClick, options = [], onSelect }) {
   const Icon = filter.icon
@@ -101,9 +104,24 @@ function ActiveTag({ label, onRemove }) {
   )
 }
 
+// ----- Jahn 05.07 ------
+// Default date range = rolling "last 30 days", recomputed on page load/refresh.
+function getDefaultDateRange() {
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 29)
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  }
+}
+// ----- Jahn 05.07 ------
+
 const DEFAULT_FILTERS = {
-  startDate: "",
-  endDate: "",
+  // ----- Jahn 05.07 ------
+  ...getDefaultDateRange(),
+  // ----- Jahn 05.07 ------
   city: "",
   state: "",
   category: "",
@@ -126,6 +144,12 @@ export default function PizzaSalesHeader({
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
+  // ----- Jahn 05.07 ------
+  const dateRangeChipRef = useRef(null)
+  const [dateRangeAnchor, setDateRangeAnchor] = useState(null)
+  const dateRangeOpen = activeDropdown === "dateRange"
+  // ----- Jahn 05.07 ------
 
   useEffect(() => {
     let active = true
@@ -225,8 +249,28 @@ export default function PizzaSalesHeader({
     [selectedFilters, filterOptions],
   )
 
+  // ----- Jahn 05.07 ------
+  // "Last 30 days" is the built-in default, so it should never count as an
+  // active/removable filter — only a range the user explicitly picked should.
+  const defaultDateRange = getDefaultDateRange()
+  const isDefaultDateRange =
+    selectedFilters.startDate === defaultDateRange.startDate &&
+    selectedFilters.endDate === defaultDateRange.endDate
+  // ----- Jahn 05.07 ------
+
   const activeTags = useMemo(() => {
     const tags = []
+    // ----- Jahn 05.07 ------
+    if (selectedFilters.startDate && selectedFilters.endDate && !isDefaultDateRange) {
+      tags.push({
+        id: "dateRange",
+        label: `Date Range: ${formatRangeValue({
+          start: new Date(selectedFilters.startDate),
+          end: new Date(selectedFilters.endDate),
+        })}`,
+      })
+    }
+    // ----- Jahn 05.07 ------
     if (selectedFilters.city)
       tags.push({ id: "city", label: `City: ${selectedFilters.city}` })
     if (selectedFilters.state)
@@ -239,13 +283,43 @@ export default function PizzaSalesHeader({
     if (selectedFilters.size)
       tags.push({ id: "size", label: `Size: ${selectedFilters.size}` })
     return tags
-  }, [selectedFilters])
+  }, [selectedFilters, isDefaultDateRange])
 
   const handleSelectFilter = (id, value) => {
     setSelectedFilters((prev) => ({ ...prev, [id]: value }))
   }
 
+  // ----- Jahn 05.07 ------
+  const toggleDateRangeDropdown = () => {
+    if (dateRangeOpen) {
+      setActiveDropdown(null)
+      return
+    }
+    const rect = dateRangeChipRef.current.getBoundingClientRect()
+    setDateRangeAnchor({ top: rect.bottom + 8, left: rect.left })
+    setActiveDropdown("dateRange")
+  }
+
+  const toISODate = (date) => date.toISOString().slice(0, 10)
+
+  const handleDateRangeApply = ({ start, end }) => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      startDate: toISODate(start),
+      endDate: toISODate(end),
+    }))
+    setActiveDropdown(null)
+  }
+  // ----- Jahn 05.07 ------
+
   const removeFilter = (id) => {
+    // ----- Jahn 05.07 ------
+    // Removing the date range goes back to the "last 30 days" default, not "All".
+    if (id === "dateRange") {
+      setSelectedFilters((prev) => ({ ...prev, ...getDefaultDateRange() }))
+      return
+    }
+    // ----- Jahn 05.07 ------
     setSelectedFilters((prev) => ({ ...prev, [id]: "" }))
   }
 
@@ -284,6 +358,46 @@ export default function PizzaSalesHeader({
 
       {/* Filter track — overflow-visible layout lets absolute elements display properly */}
       <div className="flex gap-2 overflow-visible pb-1 clean-scrollbar">
+        {/* ----- Jahn 05.07 ------ */}
+        <button
+          type="button"
+          ref={dateRangeChipRef}
+          onClick={toggleDateRangeDropdown}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm whitespace-nowrap transition-colors
+            ${
+              dateRangeOpen
+                ? "bg-pizzabi-card border-pizzabi-amber text-white"
+                : "bg-pizzabi-card bg-opacity-80 border-pizzabi-muted/20 hover:bg-opacity-90 hover:border-pizzabi-muted/40 text-pizzabi-muted"
+            }`}
+        >
+          <Calendar size={14} className="text-pizzabi-muted" />
+          <span className="text-xs font-medium">Date Range</span>
+          {/* ----- Jahn 05.07 ------ */}
+          {/* Default range shows the "Letzte 30 Tage" label instead of the raw
+              dates, since it's the baseline state, not a user-picked filter. */}
+          <span
+            className={`font-semibold text-xs ${
+              !isDefaultDateRange && selectedFilters.startDate && selectedFilters.endDate
+                ? "text-white"
+                : "text-pizzabi-muted"
+            }`}
+          >
+            {isDefaultDateRange
+              ? "Letzte 30 Tage"
+              : selectedFilters.startDate && selectedFilters.endDate
+                ? formatRangeValue({
+                    start: new Date(selectedFilters.startDate),
+                    end: new Date(selectedFilters.endDate),
+                  })
+                : "All"}
+          </span>
+          {/* ----- Jahn 05.07 ------ */}
+          <ChevronDown
+            size={12}
+            className={`transition-transform duration-200 ${dateRangeOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        {/* ----- Jahn 05.07 ------ */}
         {filtersConfig.map((f) => (
           <FilterChip
             key={f.id}
@@ -295,6 +409,23 @@ export default function PizzaSalesHeader({
           />
         ))}
       </div>
+
+      {/* ----- Jahn 05.07 ------ */}
+      {dateRangeOpen && dateRangeAnchor && (
+        <DateRangePicker
+          anchor={dateRangeAnchor}
+          chipRef={dateRangeChipRef}
+          initialStart={
+            selectedFilters.startDate ? new Date(selectedFilters.startDate) : null
+          }
+          initialEnd={
+            selectedFilters.endDate ? new Date(selectedFilters.endDate) : null
+          }
+          onApply={handleDateRangeApply}
+          onCancel={() => setActiveDropdown(null)}
+        />
+      )}
+      {/* ----- Jahn 05.07 ------ */}
 
       {activeTags.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap pt-1">
