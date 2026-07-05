@@ -26,6 +26,8 @@
   --color-pizzabi-teal: #3a868f;
   /* Slate gray - used for secondary text, metadata, descriptions, and axis lines */
   --color-pizzabi-muted: #9ca3af;
+  /* Primary foreground text — white in dark mode, near-black in light mode */
+  --color-pizzabi-foreground: #ffffff;
 }
 
 /* ==========================================================================
@@ -51,4 +53,6 @@
   --color-pizzabi-teal: #28666e;
   /* Darker charcoal-gray text color for highly readable secondary body/labels */
   --color-pizzabi-muted: #64748b;
+  /* Primary foreground text — near-black in light mode */
+  --color-pizzabi-foreground: #1e293b;
 }

@@ -1,6 +1,7 @@
 import React from "react"
 import PizzaSalesHeader from "../components/Header"
 import Charts from "../components/Charts"
+import ChartCoMatrix from "../components/ChartCoMatrix"
 
 export default function Dashboard({ selectedFilters, onFiltersChange }) {
   return (
