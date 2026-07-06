@@ -94,7 +94,7 @@ function formatDelta(value, baseline) {
 /**
  * Orchestrates unified parsing of base and item scopes while holding sequential variable indexes.
  */
-function buildFilterClause(filters) {
+export function buildFilterClause(filters) {
   const baseFilters = {
     city: filters.city || "",
     state: filters.state || "",

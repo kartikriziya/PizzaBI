@@ -106,14 +106,27 @@ function ActiveTag({ label, onRemove }) {
 
 // ----- Jahn 05.07 ------
 // Default date range = rolling "last 30 days", recomputed on page load/refresh.
+function formatDateValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function parseDateValue(value) {
+  if (!value) return null
+  const [year, month, day] = value.split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function getDefaultDateRange() {
   const end = new Date()
   end.setHours(0, 0, 0, 0)
   const start = new Date(end)
   start.setDate(start.getDate() - 29)
   return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
+    startDate: formatDateValue(start),
+    endDate: formatDateValue(end),
   }
 }
 // ----- Jahn 05.07 ------
@@ -201,7 +214,12 @@ export default function PizzaSalesHeader({
     return () => {
       active = false
     }
-  }, [selectedFilters.city, selectedFilters.state, selectedFilters.category, selectedFilters.size])
+  }, [
+    selectedFilters.city,
+    selectedFilters.state,
+    selectedFilters.category,
+    selectedFilters.size,
+  ])
 
   useEffect(() => {
     setSelectedFilters(selectedFiltersProp)
@@ -261,12 +279,16 @@ export default function PizzaSalesHeader({
   const activeTags = useMemo(() => {
     const tags = []
     // ----- Jahn 05.07 ------
-    if (selectedFilters.startDate && selectedFilters.endDate && !isDefaultDateRange) {
+    if (
+      selectedFilters.startDate &&
+      selectedFilters.endDate &&
+      !isDefaultDateRange
+    ) {
       tags.push({
         id: "dateRange",
         label: `Date Range: ${formatRangeValue({
-          start: new Date(selectedFilters.startDate),
-          end: new Date(selectedFilters.endDate),
+          start: parseDateValue(selectedFilters.startDate),
+          end: parseDateValue(selectedFilters.endDate),
         })}`,
       })
     }
@@ -300,7 +322,7 @@ export default function PizzaSalesHeader({
     setActiveDropdown("dateRange")
   }
 
-  const toISODate = (date) => date.toISOString().slice(0, 10)
+  const toISODate = (date) => formatDateValue(date)
 
   const handleDateRangeApply = ({ start, end }) => {
     setSelectedFilters((prev) => ({
@@ -377,7 +399,9 @@ export default function PizzaSalesHeader({
               dates, since it's the baseline state, not a user-picked filter. */}
           <span
             className={`font-semibold text-xs ${
-              !isDefaultDateRange && selectedFilters.startDate && selectedFilters.endDate
+              !isDefaultDateRange &&
+              selectedFilters.startDate &&
+              selectedFilters.endDate
                 ? "text-white"
                 : "text-pizzabi-muted"
             }`}
@@ -416,10 +440,14 @@ export default function PizzaSalesHeader({
           anchor={dateRangeAnchor}
           chipRef={dateRangeChipRef}
           initialStart={
-            selectedFilters.startDate ? new Date(selectedFilters.startDate) : null
+            selectedFilters.startDate
+              ? parseDateValue(selectedFilters.startDate)
+              : null
           }
           initialEnd={
-            selectedFilters.endDate ? new Date(selectedFilters.endDate) : null
+            selectedFilters.endDate
+              ? parseDateValue(selectedFilters.endDate)
+              : null
           }
           onApply={handleDateRangeApply}
           onCancel={() => setActiveDropdown(null)}
