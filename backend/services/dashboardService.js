@@ -24,11 +24,11 @@ function buildBaseConditions(filters) {
   addCondition("stores.state = ?", filters.state)
 
   if (filters.startDate) {
-    addCondition("orders.order_date >= ?", filters.startDate)
+    addCondition("orders.order_date::date >= ?", filters.startDate)
   }
 
   if (filters.endDate) {
-    addCondition("orders.order_date <= ?", filters.endDate)
+    addCondition("orders.order_date::date <= ?", filters.endDate)
   }
 
   return conditions

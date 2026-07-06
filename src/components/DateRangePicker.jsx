@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { getAllTimeRange } from "../apis/filterApi.js"
 
 // ── pure date helpers (no external deps) ──────────────────────────────────────
 
@@ -65,7 +66,7 @@ function qEnd(y, q) {
   return new Date(y, q * 3, 0)
 }
 
-function buildPresets(year) {
+function buildPresets(year, fullRange) {
   const currentYear = Number.isFinite(year) ? year : today.getFullYear()
 
   return [
@@ -109,6 +110,16 @@ function buildPresets(year) {
         new Date(currentYear - 1, 0, 1),
         new Date(currentYear - 1, 11, 31),
       ],
+    },
+    { type: "divider" },
+    {
+      label: "All Time Range",
+      getRange: () => {
+        if (fullRange?.startDate && fullRange?.endDate) {
+          return [new Date(fullRange.startDate), new Date(fullRange.endDate)]
+        }
+        return [new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)]
+      },
     },
   ]
 }
@@ -234,10 +245,31 @@ export default function DateRangePicker({
     ? new Date(initialStart.getFullYear(), initialStart.getMonth())
     : new Date(2024, 3)
   const [leftMonth, setLeftMonth] = useState(defaultLeft)
+  const [fullRange, setFullRange] = useState(null)
   const rightMonth = new Date(leftMonth.getFullYear(), leftMonth.getMonth() + 1)
-  const presets = buildPresets(leftMonth.getFullYear())
+  const presets = buildPresets(leftMonth.getFullYear(), fullRange)
 
   const containerRef = useRef(null)
+
+  useEffect(() => {
+    let active = true
+
+    const loadFullRange = async () => {
+      try {
+        const range = await getAllTimeRange()
+        if (active && range?.startDate && range?.endDate) {
+          setFullRange(range)
+        }
+      } catch (error) {
+        console.error("Failed to load full date range", error)
+      }
+    }
+
+    loadFullRange()
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Close when clicking outside both the dropdown and the chip button
   useEffect(() => {
@@ -268,8 +300,25 @@ export default function DateRangePicker({
     }
   }
 
-  function handlePreset(preset) {
-    const [s, e] = preset.getRange()
+  async function handlePreset(preset) {
+    let [s, e] = preset.getRange()
+
+    if (
+      preset.label === "All Time Range" &&
+      (!fullRange?.startDate || !fullRange?.endDate)
+    ) {
+      try {
+        const range = await getAllTimeRange()
+        if (range?.startDate && range?.endDate) {
+          setFullRange(range)
+          s = new Date(range.startDate)
+          e = new Date(range.endDate)
+        }
+      } catch (error) {
+        console.error("Failed to load all time range", error)
+      }
+    }
+
     setStart(startOfDay(s))
     setEnd(startOfDay(e))
     setHover(null)

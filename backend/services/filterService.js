@@ -103,6 +103,24 @@ export async function getDefaultDateRange() {
   }
 }
 
+export async function getAllTimeRange() {
+  const result = await pool.query(`
+    SELECT
+      TO_CHAR(MIN(order_date::date), 'YYYY-MM-DD') AS earliest_date,
+      TO_CHAR(MAX(order_date::date), 'YYYY-MM-DD') AS latest_date
+    FROM orders
+    WHERE order_date IS NOT NULL
+  `)
+
+  const earliestDate = result.rows[0]?.earliest_date ?? ""
+  const latestDate = result.rows[0]?.latest_date ?? ""
+
+  return {
+    startDate: earliestDate,
+    endDate: latestDate,
+  }
+}
+
 export async function getFilters(filters = {}) {
   const records = await fetchRecords(filters)
 

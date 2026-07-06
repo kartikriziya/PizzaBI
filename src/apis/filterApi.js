@@ -19,3 +19,8 @@ export const getDefaultDateRange = async () => {
   const response = await axios.get(`${API_URL}/filters/default-range`)
   return response.data
 }
+
+export const getAllTimeRange = async () => {
+  const response = await axios.get(`${API_URL}/filters/all-time-range`)
+  return response.data
+}
