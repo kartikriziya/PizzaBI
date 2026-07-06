@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import {
   LineChart,
   Line,
@@ -10,10 +10,19 @@ import {
 } from "recharts"
 import { COLORS, tooltipStyle } from "../constants/data"
 import { getLineChartData } from "../apis/chartApi.js"
+import { formatRangeValue } from "./DateRangePicker"
 
 export default function ChartLine({ selectedFilters }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const rangeLabel = useMemo(() => {
+    if (!selectedFilters?.startDate || !selectedFilters?.endDate)
+      return "All Time"
+    const start = new Date(selectedFilters.startDate)
+    const end = new Date(selectedFilters.endDate)
+    return formatRangeValue({ start, end })
+  }, [selectedFilters])
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,9 +43,7 @@ export default function ChartLine({ selectedFilters }) {
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5 col-span-2">
       <p className="text-pizzabi-muted text-xs mb-0.5">Daily revenue</p>
-      <h2 className="text-white font-medium text-lg mb-4">
-        Apr 1–30, 2024 · City Center
-      </h2>
+      <h2 className="text-white font-medium text-lg mb-4">{rangeLabel}</h2>
 
       <div className="flex gap-5 mb-3 text-xs text-pizzabi-muted">
         <span className="flex items-center gap-1.5">

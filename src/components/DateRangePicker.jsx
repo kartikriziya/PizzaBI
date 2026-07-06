@@ -33,14 +33,21 @@ function firstWeekdayOfMonth(year, month) {
 
 export function formatRangeValue(range) {
   if (!range?.start || !range?.end) return "Auswählen…"
-  const fmt = (d) =>
-    d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const startYear = range.start.getFullYear()
+  const endYear = range.end.getFullYear()
+  const fmtStart = (d, includeYear) =>
+    d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      ...(includeYear ? { year: "numeric" } : {}),
+    })
+  const startStr = fmtStart(range.start, startYear !== endYear)
   const endStr = range.end.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
-  return `${fmt(range.start)} – ${endStr}`
+  return `${startStr} – ${endStr}`
 }
 
 function formatDE(d) {
