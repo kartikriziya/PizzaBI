@@ -33,8 +33,8 @@ export default function ChartArea({ selectedFilters }) {
 
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5 md:col-span-2">
-      <p className="text-pizzabi-muted text-xs mb-0.5">Revenue trend</p>
-      <h2 className="text-white font-medium text-lg mb-4">Daily sales</h2>
+      <p className="text-pizzabi-muted text-xs mb-0.5">Orders by hour</p>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">Sales by hour</h2>
 
       <ResponsiveContainer width="100%" height={240}>
         {loading ? (
@@ -47,7 +47,7 @@ export default function ChartArea({ selectedFilters }) {
             margin={{ top: 32, right: 16, bottom: 0, left: 8 }}
           >
             <defs>
-              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={COLORS.gold} stopOpacity={0.35} />
                 <stop offset="95%" stopColor={COLORS.gold} stopOpacity={0.02} />
               </linearGradient>
@@ -59,10 +59,11 @@ export default function ChartArea({ selectedFilters }) {
               vertical={false}
             />
             <XAxis
-              dataKey="day"
+              dataKey="hour"
               tick={{ fontSize: 11, fill: "var(--color-pizzabi-muted)" }}
               tickLine={false}
               axisLine={false}
+              tickFormatter={(value) => `${value}:00`}
             />
             <YAxis
               tick={{ fontSize: 11, fill: "var(--color-pizzabi-muted)" }}
@@ -72,14 +73,14 @@ export default function ChartArea({ selectedFilters }) {
             />
             <Tooltip
               {...tooltipStyle}
-              formatter={(value) => [`€${value}`, "Revenue"]}
+              formatter={(value) => [value, "Orders"]}
             />
             <Area
               type="monotone"
-              dataKey="revenue"
+              dataKey="orders"
               stroke={COLORS.gold}
               strokeWidth={2}
-              fill="url(#revenueGradient)"
+              fill="url(#ordersGradient)"
               fillOpacity={1}
               dot={false}
               activeDot={{ r: 5, strokeWidth: 0, fill: COLORS.gold }}

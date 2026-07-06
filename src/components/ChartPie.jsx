@@ -47,7 +47,7 @@ export default function ChartPie({ selectedFilters }) {
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Sales by size</p>
-      <h2 className="text-white font-medium text-lg mb-4">Size distribution</h2>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">Size distribution</h2>
 
       <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
         {data.map((d, i) => (

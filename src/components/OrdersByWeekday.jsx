@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
   BarChart,
   Bar,
@@ -10,6 +10,7 @@ import {
   LabelList,
 } from "recharts"
 import { COLORS, tooltipStyle } from "../constants/data"
+import { formatRangeValue } from "./DateRangePicker"
 import { getWeekdayChartData } from "../apis/chartApi.js"
 
 export default function OrdersByWeekday({ selectedFilters }) {
@@ -32,21 +33,29 @@ export default function OrdersByWeekday({ selectedFilters }) {
     loadData()
   }, [selectedFilters])
 
+  const rangeLabel = useMemo(() => {
+    if (!selectedFilters?.startDate || !selectedFilters?.endDate) return "All Time"
+    const start = new Date(selectedFilters.startDate)
+    const end = new Date(selectedFilters.endDate)
+    return formatRangeValue({ start, end })
+  }, [selectedFilters])
+
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Orders by weekday</p>
-      <h2 className="text-white font-medium text-lg mb-4">Orders by weekday</h2>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">{rangeLabel}</h2>
 
-      <ResponsiveContainer width="100%" height={240}>
-        {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-            Loading chart...
-          </div>
-        ) : (
-          <BarChart
-            data={data}
-            margin={{ top: 24, right: 16, bottom: 0, left: 8 }}
-          >
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={240}>
+          {loading ? (
+            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
+              Loading chart...
+            </div>
+          ) : (
+            <BarChart
+              data={data}
+              margin={{ top: 24, right: 16, bottom: 0, left: 8 }}
+            >
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="rgba(255,255,255,0.04)"
@@ -79,9 +88,21 @@ export default function OrdersByWeekday({ selectedFilters }) {
                 formatter={(value) => value.toLocaleString()}
               />
             </Bar>
-          </BarChart>
-        )}
-      </ResponsiveContainer>
+            </BarChart>
+          )}
+        </ResponsiveContainer>
+
+        <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted">
+          Orders
+        </div>
+
+        <div
+          className="absolute bottom-0 left-1/2 text-xs text-pizzabi-muted"
+          style={{ transform: 'translateX(-50%) translateY(15px)' }}
+        >
+          Weekday
+        </div>
+      </div>
     </div>
   )
 }

@@ -16,33 +16,38 @@ const C = {
 export default function KeyInsightsTable() {
   const insights = [
     {
-      metric: "Best Seller of the Month",
-      value: "Margherita",
-      performance: "2,436 pizzas sold",
-      icon: "⭐",
+      metric: "Top Menüpunkt",
+      value: "Classic",
+      performance:
+        "Klassische Menüs sorgen für stärkeren Absatz – gezielte Aktionen können den Verkauf um 5-10 % steigern.",
+      icon: "🍕",
     },
     {
-      metric: "Best Performance",
-      value: "Pepperoni",
-      performance: "$1,429K revenue",
-      icon: "📈",
+      metric: "Umsatzfokus",
+      value: "$201,88",
+      performance:
+        "Konstante Umsatzleistung zeigt Potenzial für zusätzliche Upsell-Angebote und Rabatte bei hoher Nachfrage.",
+      icon: "💰",
     },
     {
-      metric: "Regional Favorite",
-      value: "BBQ Chicken",
-      performance: "Downtown & City Center",
+      metric: "Regionale Strategie",
+      value: "Kalifornien",
+      performance:
+        "Die stärkste Region sollte mit regionalen Kampagnen ausgebaut werden, um Umsatz und Marktanteil zu erhöhen.",
       icon: "📍",
     },
     {
-      metric: "Size Strategy",
-      value: "Large (36.7%)",
-      performance: "Highest revenue contributor",
+      metric: "Bundle-Strategie",
+      value: "Medium",
+      performance:
+        "Mittlere Bundles sind am beliebtesten; geeignete Kombi-Angebote können Bestellmengen nachhaltig erhöhen.",
       icon: "📦",
     },
     {
-      metric: "Launch Comparison",
-      value: "BBQ Chicken",
-      performance: "+18% vs last month",
+      metric: "Wachstumspotenzial",
+      value: "9 Bestellungen",
+      performance:
+        "Aktuelle Bestellzahlen lassen ein Wachstum von 10-15 % erwarten, wenn Cross-Selling und Bundles stärker beworben werden.",
       icon: "⚡",
     },
   ]
@@ -59,7 +64,7 @@ export default function KeyInsightsTable() {
       {/* header */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold" style={{ color: C.text }}>
-          Key Insights
+          Empfehlungen
         </span>
       </div>
 
@@ -75,19 +80,19 @@ export default function KeyInsightsTable() {
                 className="py-3 px-3 text-left font-semibold"
                 style={{ color: C.muted }}
               >
-                Metric
+                Kategorie
               </th>
               <th
                 className="py-3 px-3 text-left font-semibold"
                 style={{ color: C.muted }}
               >
-                Value
+                Empfehlung
               </th>
               <th
                 className="py-3 px-3 text-left font-semibold"
                 style={{ color: C.muted }}
               >
-                Performance
+                Rationale
               </th>
             </tr>
           </thead>
