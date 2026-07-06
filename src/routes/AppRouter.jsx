@@ -15,7 +15,7 @@ const DEFAULT_FILTERS = {
   size: "",
 }
 
-const HEADER_ROUTES = new Set(["/", "/overview"])
+const HEADER_ROUTES = new Set(["/", "/overview", "/statistics"])
 
 function AppRouterContent({ isDarkMode, toggleTheme, onLogout }) {
   const location = useLocation()

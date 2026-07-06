@@ -167,7 +167,10 @@ export default function PizzaSalesHeader({
 
         setDefaultDateRangeState(range)
 
-        if (!hasInitializedDefaultRange.current) {
+        const hasDateRange =
+          selectedFiltersProp.startDate && selectedFiltersProp.endDate
+
+        if (!hasInitializedDefaultRange.current && !hasDateRange) {
           hasInitializedDefaultRange.current = true
           setSelectedFilters((prev) => ({
             ...prev,
@@ -184,7 +187,7 @@ export default function PizzaSalesHeader({
     return () => {
       active = false
     }
-  }, [])
+  }, [selectedFiltersProp.startDate, selectedFiltersProp.endDate])
 
   useEffect(() => {
     let active = true
