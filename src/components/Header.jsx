@@ -370,7 +370,11 @@ export default function PizzaSalesHeader({
   }
 
   const clearAll = () => {
-    setSelectedFilters(DEFAULT_FILTERS)
+    setSelectedFilters({
+      ...DEFAULT_FILTERS,
+      startDate: defaultDateRange?.startDate || "",
+      endDate: defaultDateRange?.endDate || "",
+    })
   }
 
   const toggleDropdown = (id) => {
