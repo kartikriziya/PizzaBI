@@ -73,8 +73,7 @@ export default function ChartLine({ selectedFilters }) {
             />
             <XAxis
               dataKey="day"
-              tick={{ fontSize: 10, fill: "var(--color-pizzabi-muted)" }}
-              interval={4}
+              tick={false}
               tickLine={false}
               axisLine={false}
             />

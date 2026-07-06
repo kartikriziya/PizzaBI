@@ -124,10 +124,10 @@ export default function Sidebar({
             <div className="flex justify-between items-center flex-1 ml-3 min-w-0">
               <div className="truncate">
                 <h4 className="font-semibold text-sm text-pizzabi-gold truncate">
-                  John Doe
+                  Admin
                 </h4>
                 <p className="text-xs text-pizzabi-muted truncate">
-                  john.doe@example.com
+                  admin.sabba@fra-uas.de
                 </p>
               </div>
               <div className="relative" ref={menuRef}>

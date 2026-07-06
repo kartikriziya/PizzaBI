@@ -11,9 +11,33 @@ import {
 import { COLORS, tooltipStyle } from "../constants/data"
 import { getRadarChartData } from "../apis/chartApi.js"
 
+function getNiceStep(maxValue, maxTicks = 5) {
+  if (!Number.isFinite(maxValue) || maxValue <= 0) return 100000
+
+  const roughStep = maxValue / Math.max(maxTicks - 1, 1)
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep))
+  const fraction = roughStep / magnitude
+
+  let niceFraction
+  if (fraction <= 1) niceFraction = 1
+  else if (fraction <= 2) niceFraction = 2
+  else if (fraction <= 5) niceFraction = 5
+  else niceFraction = 10
+
+  return niceFraction * magnitude
+}
+
 export default function ChartRadar({ selectedFilters }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const maxValue = Math.max(...data.map((item) => Number(item.orders) || 0), 0)
+  const tickStep = getNiceStep(maxValue)
+  const radiusDomain = [0, Math.max(maxValue, tickStep)]
+  const radiusTicks = Array.from(
+    { length: Math.floor(radiusDomain[1] / tickStep) + 1 },
+    (_, index) => index * tickStep,
+  )
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,8 +84,8 @@ export default function ChartRadar({ selectedFilters }) {
               <PolarRadiusAxis
                 angle={0}
                 orientation="middle"
-                domain={[0, 120]}
-                ticks={[0, 30, 60, 90, 120]}
+                domain={radiusDomain}
+                ticks={radiusTicks}
                 tick={{
                   fill: "var(--color-pizzabi-muted)",
                   fontSize: 10,

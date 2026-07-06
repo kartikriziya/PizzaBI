@@ -77,7 +77,7 @@ function FilterChip({ filter, isOpen, onClick, options = [], onSelect }) {
                 onSelect(option)
                 onClick()
               }}
-              className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors hover:bg-white/5 ${filter.value === option ? "text-pizzabi-amber font-semibold bg-pizzabi-amber/10" : "text-white"}`}
+              className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors hover:bg-white/5 ${filter.value === option ? "text-pizzabi-amber font-semibold bg-pizzabi-amber/10" : "text-slate-400"}`}
             >
               {option}
             </button>
