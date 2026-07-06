@@ -8,7 +8,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react"
-import { getFilters } from "../apis/filterApi.js"
+import { getFilters, getDefaultDateRange } from "../apis/filterApi.js"
 // ----- Jahn 05.07 ------
 import DateRangePicker, { formatRangeValue } from "./DateRangePicker"
 // ----- Jahn 05.07 ------
@@ -105,28 +105,32 @@ function ActiveTag({ label, onRemove }) {
 }
 
 // ----- Jahn 05.07 ------
-// Default date range = rolling "last 30 days", recomputed on page load/refresh.
-function getDefaultDateRange() {
-  const end = new Date()
-  end.setHours(0, 0, 0, 0)
-  const start = new Date(end)
-  start.setDate(start.getDate() - 29)
+function formatDateValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function parseDateValue(value) {
+  if (!value) return null
+  const [year, month, day] = value.split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function createEmptyFilterState() {
   return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
+    startDate: "",
+    endDate: "",
+    city: "",
+    state: "",
+    category: "",
+    size: "",
   }
 }
 // ----- Jahn 05.07 ------
 
-const DEFAULT_FILTERS = {
-  // ----- Jahn 05.07 ------
-  ...getDefaultDateRange(),
-  // ----- Jahn 05.07 ------
-  city: "",
-  state: "",
-  category: "",
-  size: "",
-}
+const DEFAULT_FILTERS = createEmptyFilterState()
 
 export default function PizzaSalesHeader({
   onFiltersChange,
@@ -140,6 +144,8 @@ export default function PizzaSalesHeader({
   })
 
   const [selectedFilters, setSelectedFilters] = useState(selectedFiltersProp)
+  const [defaultDateRange, setDefaultDateRangeState] = useState(null)
+  const hasInitializedDefaultRange = useRef(false)
 
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -150,6 +156,38 @@ export default function PizzaSalesHeader({
   const [dateRangeAnchor, setDateRangeAnchor] = useState(null)
   const dateRangeOpen = activeDropdown === "dateRange"
   // ----- Jahn 05.07 ------
+
+  useEffect(() => {
+    let active = true
+
+    const fetchDefaultRange = async () => {
+      try {
+        const range = await getDefaultDateRange()
+        if (!active || !range?.startDate || !range?.endDate) return
+
+        setDefaultDateRangeState(range)
+
+        const hasDateRange =
+          selectedFiltersProp.startDate && selectedFiltersProp.endDate
+
+        if (!hasInitializedDefaultRange.current && !hasDateRange) {
+          hasInitializedDefaultRange.current = true
+          setSelectedFilters((prev) => ({
+            ...prev,
+            startDate: range.startDate,
+            endDate: range.endDate,
+          }))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchDefaultRange()
+    return () => {
+      active = false
+    }
+  }, [selectedFiltersProp.startDate, selectedFiltersProp.endDate])
 
   useEffect(() => {
     let active = true
@@ -201,7 +239,12 @@ export default function PizzaSalesHeader({
     return () => {
       active = false
     }
-  }, [selectedFilters.city, selectedFilters.state, selectedFilters.category, selectedFilters.size])
+  }, [
+    selectedFilters.city,
+    selectedFilters.state,
+    selectedFilters.category,
+    selectedFilters.size,
+  ])
 
   useEffect(() => {
     setSelectedFilters(selectedFiltersProp)
@@ -250,10 +293,8 @@ export default function PizzaSalesHeader({
   )
 
   // ----- Jahn 05.07 ------
-  // "Last 30 days" is the built-in default, so it should never count as an
-  // active/removable filter — only a range the user explicitly picked should.
-  const defaultDateRange = getDefaultDateRange()
   const isDefaultDateRange =
+    Boolean(defaultDateRange) &&
     selectedFilters.startDate === defaultDateRange.startDate &&
     selectedFilters.endDate === defaultDateRange.endDate
   // ----- Jahn 05.07 ------
@@ -261,12 +302,16 @@ export default function PizzaSalesHeader({
   const activeTags = useMemo(() => {
     const tags = []
     // ----- Jahn 05.07 ------
-    if (selectedFilters.startDate && selectedFilters.endDate && !isDefaultDateRange) {
+    if (
+      selectedFilters.startDate &&
+      selectedFilters.endDate &&
+      !isDefaultDateRange
+    ) {
       tags.push({
         id: "dateRange",
         label: `Date Range: ${formatRangeValue({
-          start: new Date(selectedFilters.startDate),
-          end: new Date(selectedFilters.endDate),
+          start: parseDateValue(selectedFilters.startDate),
+          end: parseDateValue(selectedFilters.endDate),
         })}`,
       })
     }
@@ -300,7 +345,7 @@ export default function PizzaSalesHeader({
     setActiveDropdown("dateRange")
   }
 
-  const toISODate = (date) => date.toISOString().slice(0, 10)
+  const toISODate = (date) => formatDateValue(date)
 
   const handleDateRangeApply = ({ start, end }) => {
     setSelectedFilters((prev) => ({
@@ -316,7 +361,11 @@ export default function PizzaSalesHeader({
     // ----- Jahn 05.07 ------
     // Removing the date range goes back to the "last 30 days" default, not "All".
     if (id === "dateRange") {
-      setSelectedFilters((prev) => ({ ...prev, ...getDefaultDateRange() }))
+      setSelectedFilters((prev) => ({
+        ...prev,
+        startDate: defaultDateRange?.startDate || "",
+        endDate: defaultDateRange?.endDate || "",
+      }))
       return
     }
     // ----- Jahn 05.07 ------
@@ -324,7 +373,11 @@ export default function PizzaSalesHeader({
   }
 
   const clearAll = () => {
-    setSelectedFilters(DEFAULT_FILTERS)
+    setSelectedFilters({
+      ...DEFAULT_FILTERS,
+      startDate: defaultDateRange?.startDate || "",
+      endDate: defaultDateRange?.endDate || "",
+    })
   }
 
   const toggleDropdown = (id) => {
@@ -377,17 +430,19 @@ export default function PizzaSalesHeader({
               dates, since it's the baseline state, not a user-picked filter. */}
           <span
             className={`font-semibold text-xs ${
-              !isDefaultDateRange && selectedFilters.startDate && selectedFilters.endDate
+              !isDefaultDateRange &&
+              selectedFilters.startDate &&
+              selectedFilters.endDate
                 ? "text-white"
                 : "text-pizzabi-muted"
             }`}
           >
             {isDefaultDateRange
-              ? "Letzte 30 Tage"
+              ? `${defaultDateRange.startDate} – ${defaultDateRange.endDate}`
               : selectedFilters.startDate && selectedFilters.endDate
                 ? formatRangeValue({
-                    start: new Date(selectedFilters.startDate),
-                    end: new Date(selectedFilters.endDate),
+                    start: parseDateValue(selectedFilters.startDate),
+                    end: parseDateValue(selectedFilters.endDate),
                   })
                 : "All"}
           </span>
@@ -416,10 +471,14 @@ export default function PizzaSalesHeader({
           anchor={dateRangeAnchor}
           chipRef={dateRangeChipRef}
           initialStart={
-            selectedFilters.startDate ? new Date(selectedFilters.startDate) : null
+            selectedFilters.startDate
+              ? parseDateValue(selectedFilters.startDate)
+              : null
           }
           initialEnd={
-            selectedFilters.endDate ? new Date(selectedFilters.endDate) : null
+            selectedFilters.endDate
+              ? parseDateValue(selectedFilters.endDate)
+              : null
           }
           onApply={handleDateRangeApply}
           onCancel={() => setActiveDropdown(null)}

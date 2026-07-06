@@ -20,7 +20,10 @@ function getAvailableOptions(records, filters, fieldName) {
   const matchingRecords = records.filter((record) =>
     otherFields.every((field) => {
       const selectedValue = filters[field]
-      return selectedValue === null || String(record[field] ?? "").trim() === selectedValue
+      return (
+        selectedValue === null ||
+        String(record[field] ?? "").trim() === selectedValue
+      )
     }),
   )
 
@@ -58,7 +61,8 @@ async function fetchRecords(filters = {}) {
   const values = []
   const whereClause = buildWhereClause(normalizedFilters, values)
 
-  const rowsResult = await pool.query(`
+  const rowsResult = await pool.query(
+    `
     SELECT
       s.city AS city,
       s.state AS state,
@@ -72,12 +76,49 @@ async function fetchRecords(filters = {}) {
     JOIN products p ON p.sku = oi.sku
     ${whereClause}
     ORDER BY o.order_id, s.city, p.category, p.size
-  `, values)
+  `,
+    values,
+  )
 
   return rowsResult.rows.map((row) => ({
     ...row,
     sales: Number(row.sales),
   }))
+}
+
+export async function getDefaultDateRange() {
+  const result = await pool.query(`
+    SELECT EXTRACT(YEAR FROM MAX(order_date))::int AS latest_year
+    FROM orders
+    WHERE order_date IS NOT NULL
+  `)
+
+  const latestYear = Number(
+    result.rows[0]?.latest_year || new Date().getFullYear(),
+  )
+
+  return {
+    startDate: `${latestYear}-01-01`,
+    endDate: `${latestYear}-12-31`,
+  }
+}
+
+export async function getAllTimeRange() {
+  const result = await pool.query(`
+    SELECT
+      TO_CHAR(MIN(order_date::date), 'YYYY-MM-DD') AS earliest_date,
+      TO_CHAR(MAX(order_date::date), 'YYYY-MM-DD') AS latest_date
+    FROM orders
+    WHERE order_date IS NOT NULL
+  `)
+
+  const earliestDate = result.rows[0]?.earliest_date ?? ""
+  const latestDate = result.rows[0]?.latest_date ?? ""
+
+  return {
+    startDate: earliestDate,
+    endDate: latestDate,
+  }
 }
 
 export async function getFilters(filters = {}) {
@@ -104,6 +145,7 @@ export async function getFilters(filters = {}) {
   return {
     table: "joined_sales",
     filters: cleanedFilters,
+    defaultDateRange: await getDefaultDateRange(),
     filteredData: records.filter((record) =>
       Object.entries(cleanedFilters).every(([key, value]) =>
         value === null ? true : String(record[key] ?? "").trim() === value,
@@ -115,7 +157,11 @@ export async function getFilters(filters = {}) {
     sizes: getAvailableOptions(records, cleanedFilters, "size"),
     availableCities: getAvailableOptions(records, cleanedFilters, "city"),
     availableStates: getAvailableOptions(records, cleanedFilters, "state"),
-    availableCategories: getAvailableOptions(records, cleanedFilters, "category"),
+    availableCategories: getAvailableOptions(
+      records,
+      cleanedFilters,
+      "category",
+    ),
     availableSizes: getAvailableOptions(records, cleanedFilters, "size"),
   }
 }

@@ -1,18 +1,33 @@
 import pool from "../db/index.js"
+import { buildFilterClause } from "./dashboardService.js"
 
-export async function getKpiData() {
-  const result = await pool.query(`
+export async function getKpiData(filters = {}) {
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
+
+  const query = `
     SELECT
-      COUNT(*) FILTER (WHERE o.order_date IS NOT NULL) AS total_orders,
-      SUM(o.total)::numeric(12,2) AS total_revenue,
-      AVG(o.total)::numeric(12,2) AS avg_order_value,
-      COUNT(DISTINCT s.store_id) AS total_stores,
-      COUNT(DISTINCT p.sku) AS total_products
-    FROM orders o
-    JOIN stores s ON s.store_id = o.store_id
-    JOIN orderitems oi ON oi.order_id = o.order_id
-    JOIN products p ON p.sku = oi.sku
-  `)
+      COUNT(DISTINCT orders.order_id)::int AS total_orders,
+      COALESCE(SUM(orders.total), 0)::numeric(12,2) AS total_revenue,
+      COALESCE(AVG(orders.total), 0)::numeric(12,2) AS avg_order_value,
+      COUNT(DISTINCT stores.store_id)::int AS total_stores,
+      COUNT(DISTINCT products.sku)::int AS total_products
+    FROM orders
+    LEFT JOIN stores ON stores.store_id = orders.store_id
+    ${
+      itemQuery.clauses.length > 0
+        ? `
+    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+    LEFT JOIN products ON products.sku = oi.sku
+    `
+        : ""
+    }
+    ${whereSql}
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
 
   const row = result.rows[0]
   return {

@@ -2,7 +2,7 @@ import { getKpiData } from "../services/kpiService.js"
 
 export async function getKpi(req, res) {
   try {
-    const kpi = await getKpiData()
+    const kpi = await getKpiData(req.query)
     res.json(kpi)
   } catch (err) {
     console.error("[kpi] request failed", err)

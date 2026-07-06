@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { getAllTimeRange } from "../apis/filterApi.js"
 
 // ── pure date helpers (no external deps) ──────────────────────────────────────
 
@@ -32,18 +33,30 @@ function firstWeekdayOfMonth(year, month) {
 
 export function formatRangeValue(range) {
   if (!range?.start || !range?.end) return "Auswählen…"
-  const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const startYear = range.start.getFullYear()
+  const endYear = range.end.getFullYear()
+  const fmtStart = (d, includeYear) =>
+    d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      ...(includeYear ? { year: "numeric" } : {}),
+    })
+  const startStr = fmtStart(range.start, startYear !== endYear)
   const endStr = range.end.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
-  return `${fmt(range.start)} – ${endStr}`
+  return `${startStr} – ${endStr}`
 }
 
 function formatDE(d) {
   if (!d) return "—"
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })
+  return d.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
 }
 
 // ── Quick-Select presets ───────────────────────────────────────────────────────
@@ -53,43 +66,100 @@ const today = startOfDay(new Date())
 function sub(days) {
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() - days)
 }
-function qStart(y, q) { return new Date(y, (q - 1) * 3, 1) }
-function qEnd(y, q)   { return new Date(y, q * 3, 0) }
+function qStart(y, q) {
+  return new Date(y, (q - 1) * 3, 1)
+}
+function qEnd(y, q) {
+  return new Date(y, q * 3, 0)
+}
 
-const PRESETS = [
-  { label: "Letzte 7 Tage",  getRange: () => [sub(6), today] },
-  { label: "Letzte 30 Tage", getRange: () => [sub(29), today] },
-  {
-    label: "Letzter Monat",
-    getRange: () => [
-      new Date(today.getFullYear(), today.getMonth() - 1, 1),
-      new Date(today.getFullYear(), today.getMonth(), 0),
-    ],
-  },
-  { type: "divider" },
-  { label: "Q1 2024", getRange: () => [qStart(2024, 1), qEnd(2024, 1)] },
-  { label: "Q2 2024", getRange: () => [qStart(2024, 2), qEnd(2024, 2)] },
-  { label: "Q3 2024", getRange: () => [qStart(2024, 3), qEnd(2024, 3)] },
-  { label: "Q4 2024", getRange: () => [qStart(2024, 4), qEnd(2024, 4)] },
-  { type: "divider" },
-  { label: "Q1 2025", getRange: () => [qStart(2025, 1), qEnd(2025, 1)] },
-  { label: "Q2 2025", getRange: () => [qStart(2025, 2), qEnd(2025, 2)] },
-  { type: "divider" },
-  { label: "Jahr 2024", getRange: () => [new Date(2024, 0, 1), new Date(2024, 11, 31)] },
-  { label: "Jahr 2023", getRange: () => [new Date(2023, 0, 1), new Date(2023, 11, 31)] },
-]
+function buildPresets(year, fullRange) {
+  const currentYear = Number.isFinite(year) ? year : today.getFullYear()
+
+  return [
+    { label: "Letzte 7 Tage", getRange: () => [sub(6), today] },
+    { label: "Letzte 30 Tage", getRange: () => [sub(29), today] },
+    {
+      label: "Letzter Monat",
+      getRange: () => [
+        new Date(today.getFullYear(), today.getMonth() - 1, 1),
+        new Date(today.getFullYear(), today.getMonth(), 0),
+      ],
+    },
+    { type: "divider" },
+    {
+      label: `Q1 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 1), qEnd(currentYear, 1)],
+    },
+    {
+      label: `Q2 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 2), qEnd(currentYear, 2)],
+    },
+    {
+      label: `Q3 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 3), qEnd(currentYear, 3)],
+    },
+    {
+      label: `Q4 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 4), qEnd(currentYear, 4)],
+    },
+    { type: "divider" },
+    {
+      label: `Jahr ${currentYear}`,
+      getRange: () => [
+        new Date(currentYear, 0, 1),
+        new Date(currentYear, 11, 31),
+      ],
+    },
+    {
+      label: `Jahr ${currentYear - 1}`,
+      getRange: () => [
+        new Date(currentYear - 1, 0, 1),
+        new Date(currentYear - 1, 11, 31),
+      ],
+    },
+    { type: "divider" },
+    {
+      label: "All Time Range",
+      getRange: () => {
+        if (fullRange?.startDate && fullRange?.endDate) {
+          return [new Date(fullRange.startDate), new Date(fullRange.endDate)]
+        }
+        return [new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)]
+      },
+    },
+  ]
+}
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 const MONTHS_DE = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
+  "Januar",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
 ]
 
 // ── CalendarMonth ─────────────────────────────────────────────────────────────
 
-function CalendarMonth({ year, month, start, end, hover, onDayClick, onDayHover }) {
-  const blanks  = firstWeekdayOfMonth(year, month)
-  const total   = getDaysInMonth(year, month)
+function CalendarMonth({
+  year,
+  month,
+  start,
+  end,
+  hover,
+  onDayClick,
+  onDayHover,
+}) {
+  const blanks = firstWeekdayOfMonth(year, month)
+  const total = getDaysInMonth(year, month)
   const rangeEnd = end || hover
 
   return (
@@ -100,7 +170,10 @@ function CalendarMonth({ year, month, start, end, hover, onDayClick, onDayHover 
 
       <div className="grid grid-cols-7 mb-1">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="text-center text-[11px] text-pizzabi-muted font-medium py-1">
+          <div
+            key={d}
+            className="text-center text-[11px] text-pizzabi-muted font-medium py-1"
+          >
             {d}
           </div>
         ))}
@@ -111,9 +184,9 @@ function CalendarMonth({ year, month, start, end, hover, onDayClick, onDayHover 
           <div key={`b${i}`} />
         ))}
         {Array.from({ length: total }, (_, i) => {
-          const date    = new Date(year, month, i + 1)
+          const date = new Date(year, month, i + 1)
           const isStart = isSameDay(date, start)
-          const isEnd   = isSameDay(date, end)
+          const isEnd = isSameDay(date, end)
           const inRange = isInRange(date, start, rangeEnd)
           const isToday = isSameDay(date, today)
 
@@ -125,9 +198,11 @@ function CalendarMonth({ year, month, start, end, hover, onDayClick, onDayHover 
           } else if (inRange) {
             cls += "bg-pizzabi-gold/20 text-pizzabi-foreground"
           } else if (isToday) {
-            cls += "border border-pizzabi-gold/50 text-pizzabi-gold hover:bg-pizzabi-card/60"
+            cls +=
+              "border border-pizzabi-gold/50 text-pizzabi-gold hover:bg-pizzabi-card/60"
           } else {
-            cls += "text-pizzabi-muted hover:bg-pizzabi-card hover:text-pizzabi-foreground"
+            cls +=
+              "text-pizzabi-muted hover:bg-pizzabi-card hover:text-pizzabi-foreground"
           }
 
           return (
@@ -152,25 +227,62 @@ function CalendarMonth({ year, month, start, end, hover, onDayClick, onDayHover 
 // `anchor`  — { top, left } from the chip button's getBoundingClientRect()
 // `chipRef` — ref to the chip button (excluded from the outside-click check)
 
-export default function DateRangePicker({ initialStart, initialEnd, initialPreset, onApply, onCancel, anchor, chipRef }) {
-  const [start, setStart] = useState(initialStart ? startOfDay(initialStart) : null)
-  const [end,   setEnd]   = useState(initialEnd   ? startOfDay(initialEnd)   : null)
+export default function DateRangePicker({
+  initialStart,
+  initialEnd,
+  initialPreset,
+  onApply,
+  onCancel,
+  anchor,
+  chipRef,
+}) {
+  const [start, setStart] = useState(
+    initialStart ? startOfDay(initialStart) : null,
+  )
+  const [end, setEnd] = useState(initialEnd ? startOfDay(initialEnd) : null)
   const [hover, setHover] = useState(null)
   const [activePreset, setActivePreset] = useState(initialPreset ?? null)
+
+  const yearOptions = Array.from(
+    { length: 21 },
+    (_, i) => today.getFullYear() - 10 + i,
+  )
 
   const defaultLeft = initialStart
     ? new Date(initialStart.getFullYear(), initialStart.getMonth())
     : new Date(2024, 3)
   const [leftMonth, setLeftMonth] = useState(defaultLeft)
+  const [fullRange, setFullRange] = useState(null)
   const rightMonth = new Date(leftMonth.getFullYear(), leftMonth.getMonth() + 1)
+  const presets = buildPresets(leftMonth.getFullYear(), fullRange)
 
   const containerRef = useRef(null)
+
+  useEffect(() => {
+    let active = true
+
+    const loadFullRange = async () => {
+      try {
+        const range = await getAllTimeRange()
+        if (active && range?.startDate && range?.endDate) {
+          setFullRange(range)
+        }
+      } catch (error) {
+        console.error("Failed to load full date range", error)
+      }
+    }
+
+    loadFullRange()
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Close when clicking outside both the dropdown and the chip button
   useEffect(() => {
     function handleOutside(e) {
       const insideDropdown = containerRef.current?.contains(e.target)
-      const insideChip     = chipRef?.current?.contains(e.target)
+      const insideChip = chipRef?.current?.contains(e.target)
       if (!insideDropdown && !insideChip) onCancel()
     }
     document.addEventListener("mousedown", handleOutside)
@@ -195,8 +307,25 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
     }
   }
 
-  function handlePreset(preset) {
-    const [s, e] = preset.getRange()
+  async function handlePreset(preset) {
+    let [s, e] = preset.getRange()
+
+    if (
+      preset.label === "All Time Range" &&
+      (!fullRange?.startDate || !fullRange?.endDate)
+    ) {
+      try {
+        const range = await getAllTimeRange()
+        if (range?.startDate && range?.endDate) {
+          setFullRange(range)
+          s = new Date(range.startDate)
+          e = new Date(range.endDate)
+        }
+      } catch (error) {
+        console.error("Failed to load all time range", error)
+      }
+    }
+
     setStart(startOfDay(s))
     setEnd(startOfDay(e))
     setHover(null)
@@ -207,13 +336,13 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
   // Clamp left so the dropdown never overflows the right edge of the viewport
   const clampedLeft = Math.min(
     anchor.left,
-    window.innerWidth - 648  // 640px width + 8px margin
+    window.innerWidth - 648, // 640px width + 8px margin
   )
 
   return (
     <div
       ref={containerRef}
-      className="fixed z-[9999] flex overflow-hidden rounded-xl border border-pizzabi-muted/20 bg-pizzabi-main shadow-2xl"
+      className="fixed z-9999 flex overflow-hidden rounded-xl border border-pizzabi-muted/20 bg-pizzabi-main shadow-2xl"
       style={{ top: anchor.top, left: Math.max(8, clampedLeft), width: 640 }}
     >
       {/* ── Quick Select ── */}
@@ -222,9 +351,12 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
           Quick Select
         </p>
         <div className="flex flex-col gap-0.5">
-          {PRESETS.map((p, i) =>
+          {presets.map((p, i) =>
             p.type === "divider" ? (
-              <div key={i} className="my-1.5 border-t border-pizzabi-muted/20" />
+              <div
+                key={i}
+                className="my-1.5 border-t border-pizzabi-muted/20"
+              />
             ) : (
               <button
                 key={p.label}
@@ -237,7 +369,7 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
               >
                 {p.label}
               </button>
-            )
+            ),
           )}
         </div>
       </div>
@@ -248,7 +380,9 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
         <div className="flex items-center gap-2 text-xs">
           <div
             className={`flex-1 rounded-lg border px-3 py-1.5 text-center transition-colors ${
-              start ? "border-pizzabi-gold/50 text-pizzabi-foreground" : "border-pizzabi-muted/20 text-pizzabi-muted"
+              start
+                ? "border-pizzabi-gold/50 text-pizzabi-foreground"
+                : "border-pizzabi-muted/20 text-pizzabi-muted"
             }`}
           >
             {start ? formatDE(start) : "Start Datum"}
@@ -256,41 +390,92 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
           <span className="text-pizzabi-muted">→</span>
           <div
             className={`flex-1 rounded-lg border px-3 py-1.5 text-center transition-colors ${
-              end ? "border-pizzabi-gold/50 text-pizzabi-foreground" : "border-pizzabi-muted/20 text-pizzabi-muted"
+              end
+                ? "border-pizzabi-gold/50 text-pizzabi-foreground"
+                : "border-pizzabi-muted/20 text-pizzabi-muted"
             }`}
           >
             {end ? formatDE(end) : "End Datum"}
           </div>
         </div>
 
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-pizzabi-muted/20 bg-pizzabi-card/40 px-2 py-2">
+          <div className="flex items-center gap-2">
+            <select
+              value={leftMonth.getFullYear()}
+              onChange={(e) =>
+                setLeftMonth(
+                  new Date(Number(e.target.value), leftMonth.getMonth()),
+                )
+              }
+              className="rounded-md border border-pizzabi-muted/20 bg-pizzabi-main px-2 py-1 text-xs text-pizzabi-foreground"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <select
+              value={leftMonth.getMonth()}
+              onChange={(e) =>
+                setLeftMonth(
+                  new Date(leftMonth.getFullYear(), Number(e.target.value)),
+                )
+              }
+              className="rounded-md border border-pizzabi-muted/20 bg-pizzabi-main px-2 py-1 text-xs text-pizzabi-foreground"
+            >
+              {MONTHS_DE.map((month, index) => (
+                <option key={month} value={index}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-[11px] uppercase tracking-wider text-pizzabi-muted">
+            Select a range
+          </div>
+        </div>
+
         {/* month nav + two calendars */}
         <div className="flex items-start gap-2">
           <button
-            onClick={() => setLeftMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1))}
+            onClick={() =>
+              setLeftMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1))
+            }
             className="mt-1 rounded p-1 text-pizzabi-muted transition-colors hover:bg-pizzabi-card hover:text-pizzabi-foreground"
           >
             <ChevronLeft size={15} />
           </button>
 
-          <div className="flex flex-1 gap-6" onMouseLeave={() => setHover(null)}>
+          <div
+            className="flex flex-1 gap-6"
+            onMouseLeave={() => setHover(null)}
+          >
             <CalendarMonth
               year={leftMonth.getFullYear()}
               month={leftMonth.getMonth()}
-              start={start} end={end} hover={hover}
+              start={start}
+              end={end}
+              hover={hover}
               onDayClick={handleDayClick}
               onDayHover={(d) => !end && setHover(d)}
             />
             <CalendarMonth
               year={rightMonth.getFullYear()}
               month={rightMonth.getMonth()}
-              start={start} end={end} hover={hover}
+              start={start}
+              end={end}
+              hover={hover}
               onDayClick={handleDayClick}
               onDayHover={(d) => !end && setHover(d)}
             />
           </div>
 
           <button
-            onClick={() => setLeftMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1))}
+            onClick={() =>
+              setLeftMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1))
+            }
             className="mt-1 rounded p-1 text-pizzabi-muted transition-colors hover:bg-pizzabi-card hover:text-pizzabi-foreground"
           >
             <ChevronRight size={15} />
@@ -306,7 +491,11 @@ export default function DateRangePicker({ initialStart, initialEnd, initialPrese
             Abbrechen
           </button>
           <button
-            onClick={() => start && end && onApply({ start, end, presetLabel: activePreset ?? null })}
+            onClick={() =>
+              start &&
+              end &&
+              onApply({ start, end, presetLabel: activePreset ?? null })
+            }
             disabled={!start || !end}
             className="rounded-lg bg-pizzabi-gold px-4 py-1.5 text-xs font-semibold text-pizzabi-main transition-colors hover:bg-pizzabi-amber disabled:cursor-not-allowed disabled:opacity-40"
           >

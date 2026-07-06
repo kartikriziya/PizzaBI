@@ -24,11 +24,11 @@ function buildBaseConditions(filters) {
   addCondition("stores.state = ?", filters.state)
 
   if (filters.startDate) {
-    addCondition("orders.order_date >= ?", filters.startDate)
+    addCondition("orders.order_date::date >= ?", filters.startDate)
   }
 
   if (filters.endDate) {
-    addCondition("orders.order_date <= ?", filters.endDate)
+    addCondition("orders.order_date::date <= ?", filters.endDate)
   }
 
   return conditions
@@ -94,7 +94,7 @@ function formatDelta(value, baseline) {
 /**
  * Orchestrates unified parsing of base and item scopes while holding sequential variable indexes.
  */
-function buildFilterClause(filters) {
+export function buildFilterClause(filters) {
   const baseFilters = {
     city: filters.city || "",
     state: filters.state || "",
