@@ -6,6 +6,9 @@ import {
   getAreaChartData as fetchAreaChartData,
   getRadarChartData as fetchRadarChartData,
   getWeekdayChartData as fetchWeekdayChartData,
+  // ----- Jahn 06.07 ------
+  getCoOccurrenceMatrix as fetchCoOccurrenceMatrix,
+  // ----- Jahn 06.07 ------
 } from "../services/dashboardService.js"
 
 export async function getKpiMetrics(req, res) {
@@ -77,3 +80,15 @@ export async function getWeekdayChartData(req, res) {
     res.status(500).json({ error: "Unable to load weekday chart data." })
   }
 }
+
+// ----- Jahn 06.07 ------
+export async function getCoMatrixData(req, res) {
+  try {
+    const data = await fetchCoOccurrenceMatrix(req.query)
+    res.json(data)
+  } catch (error) {
+    console.error("[dashboard] co-occurrence matrix request failed", error)
+    res.status(500).json({ error: "Unable to load co-occurrence matrix." })
+  }
+}
+// ----- Jahn 06.07 ------

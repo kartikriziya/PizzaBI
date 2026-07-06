@@ -33,9 +33,14 @@ export default function StatisticDashboard({
           {/* <PizzaSalesCharts /> */}
           <div className="w-full flex flex-col">
             <div className="bg-pizzabi-card p-4 md:p-6 space-y-4">
+              {/* ----- Jahn 06.07 ------ */}
+              {/* Same grid-cols-2 pattern as Charts.jsx, so the matrix's card
+                  is sized exactly like a single-column chart (e.g. "Size
+                  distribution") instead of stretching across the whole page. */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartCoMatrix />
+                <ChartCoMatrix selectedFilters={selectedFilters} />
               </div>
+              {/* ----- Jahn 06.07 ------ */}
             </div>
           </div>
         </section>

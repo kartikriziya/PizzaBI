@@ -49,3 +49,13 @@ export const getWeekdayChartData = async (filters = {}) => {
 
   return response.data
 }
+
+// ----- Jahn 06.07 ------
+export const getCoMatrixData = async (filters = {}) => {
+  const response = await axios.get(`${API_URL}/dashboard/chart/comatrix`, {
+    params: filters,
+  })
+
+  return response.data
+}
+// ----- Jahn 06.07 ------

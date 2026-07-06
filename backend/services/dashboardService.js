@@ -412,3 +412,81 @@ export async function getWeekdayChartData(filters = {}) {
     orders: Number(row.orders || 0),
   }))
 }
+
+// ----- Jahn 06.07 ------
+/**
+ * Computes how often pairs of the most popular products are ordered together
+ * (co-occurrence), restricted to the top 8 products so the matrix stays readable.
+ * Respects the same filters (city/state/category/size/date range) as every
+ * other chart via buildFilterClause.
+ */
+export async function getCoOccurrenceMatrix(filters = {}) {
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
+  const filterValues = [...baseQuery.values, ...itemQuery.values]
+
+  const filteredOrdersCte = `
+    WITH filtered_orders AS (
+      SELECT DISTINCT orders.order_id
+      FROM orders
+      LEFT JOIN stores ON orders.store_id = stores.store_id
+      ${
+        itemQuery.clauses.length > 0
+          ? `
+      LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+      LEFT JOIN products p ON oi.sku = p.sku
+      `
+          : ""
+      }
+      ${whereSql}
+    )
+  `
+
+  // Top 8 products (by number of distinct orders) among the filtered orders
+  const topProductsResult = await pool.query(
+    `${filteredOrdersCte}
+     SELECT p.name AS name, COUNT(DISTINCT oi.order_id)::int AS orders
+     FROM orderitems oi
+     JOIN products p ON p.sku = oi.sku
+     JOIN filtered_orders fo ON fo.order_id = oi.order_id
+     GROUP BY p.name
+     ORDER BY orders DESC
+     LIMIT 8`,
+    filterValues,
+  )
+
+  const products = topProductsResult.rows.map((row) => row.name).filter(Boolean)
+  if (products.length === 0) {
+    return { products: [], matrix: [] }
+  }
+
+  // Pairwise co-occurrence counts among those top products (self-join on orderitems,
+  // oi2.sku > oi1.sku avoids double-counting a pair and excludes self-pairs)
+  const pairsResult = await pool.query(
+    `${filteredOrdersCte}
+     SELECT p1.name AS product_a, p2.name AS product_b, COUNT(DISTINCT oi1.order_id)::int AS pair_count
+     FROM orderitems oi1
+     JOIN orderitems oi2 ON oi2.order_id = oi1.order_id AND oi2.sku > oi1.sku
+     JOIN products p1 ON p1.sku = oi1.sku
+     JOIN products p2 ON p2.sku = oi2.sku
+     JOIN filtered_orders fo ON fo.order_id = oi1.order_id
+     WHERE p1.name = ANY($${filterValues.length + 1})
+       AND p2.name = ANY($${filterValues.length + 1})
+     GROUP BY p1.name, p2.name`,
+    [...filterValues, products],
+  )
+
+  const indexByName = new Map(products.map((name, i) => [name, i]))
+  const matrix = products.map(() => products.map(() => 0))
+
+  for (const row of pairsResult.rows) {
+    const i = indexByName.get(row.product_a)
+    const j = indexByName.get(row.product_b)
+    if (i === undefined || j === undefined) continue
+    const count = Number(row.pair_count)
+    matrix[i][j] = count
+    matrix[j][i] = count
+  }
+
+  return { products, matrix }
+}
+// ----- Jahn 06.07 ------
