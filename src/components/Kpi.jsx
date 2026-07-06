@@ -19,8 +19,8 @@ function Card({ bg, icon, label, value, delta }) {
         </div>
 
         <div>
-          <p className="text-sm text-pizzabi-muted">{label}</p>
-          <h3 className="text-2xl font-semibold text-white">{value}</h3>
+          <p className="text-sm text-pizzabi-gold">{label}</p>
+          <h3 className="text-2xl font-semibold text-pizzabi-muted">{value}</h3>
           {delta && <p className="mt-1 text-sm text-green-500">{delta}</p>}
         </div>
       </div>

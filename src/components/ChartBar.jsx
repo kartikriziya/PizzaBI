@@ -35,7 +35,7 @@ export default function ChartBar({ selectedFilters }) {
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Sales by category</p>
-      <h2 className="text-white font-medium text-lg mb-4">Pizza types</h2>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">Pizza types</h2>
 
       <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
         {data.map((d, i) => (
@@ -49,12 +49,13 @@ export default function ChartBar({ selectedFilters }) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        <BarChart
-          layout="vertical"
-          data={data}
-          margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
-        >
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart
+            layout="vertical"
+            data={data}
+            margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
+          >
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="rgba(255,255,255,0.06)"
@@ -90,8 +91,16 @@ export default function ChartBar({ selectedFilters }) {
               />
             ))}
           </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+          </BarChart>
+        </ResponsiveContainer>
+
+        <div
+          className="absolute bottom-2 left-1/2 text-xs text-pizzabi-muted"
+          style={{ transform: 'translateX(-50%) translateY(15px)' }}
+        >
+          <span>Orders</span>
+        </div>
+      </div>
     </div>
   )
 }

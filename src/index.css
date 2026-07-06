@@ -56,3 +56,10 @@
   /* Primary foreground text — near-black in light mode */
   --color-pizzabi-foreground: #1e293b;
 }
+
+/* Responsive helper for login cover image */
+@media (max-width: 900px) {
+  .login-image-panel {
+    display: none !important;
+  }
+}

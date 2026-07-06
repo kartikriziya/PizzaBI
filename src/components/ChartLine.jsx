@@ -43,7 +43,7 @@ export default function ChartLine({ selectedFilters }) {
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5 col-span-2">
       <p className="text-pizzabi-muted text-xs mb-0.5">Daily revenue</p>
-      <h2 className="text-white font-medium text-lg mb-4">{rangeLabel}</h2>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">{rangeLabel}</h2>
 
       <div className="flex gap-5 mb-3 text-xs text-pizzabi-muted">
         <span className="flex items-center gap-1.5">
@@ -56,16 +56,17 @@ export default function ChartLine({ selectedFilters }) {
         </span>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-            Loading chart...
-          </div>
-        ) : (
-          <LineChart
-            data={data}
-            margin={{ top: 4, right: 20, bottom: 0, left: 10 }}
-          >
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={240}>
+          {loading ? (
+            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
+              Loading chart...
+            </div>
+          ) : (
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 20, bottom: 0, left: 10 }}
+            >
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="rgba(255,255,255,0.06)"
@@ -93,6 +94,7 @@ export default function ChartLine({ selectedFilters }) {
             />
             <Tooltip
               {...tooltipStyle}
+              labelFormatter={(label) => `Date: ${label}`}
               formatter={(value, name) =>
                 name === "revenue"
                   ? [`$${value.toLocaleString()}`, "Revenue"]
@@ -118,9 +120,24 @@ export default function ChartLine({ selectedFilters }) {
               dot={true}
               activeDot={{ r: 5 }}
             />
-          </LineChart>
-        )}
-      </ResponsiveContainer>
+            </LineChart>
+          )}
+        </ResponsiveContainer>
+
+        <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-pizzabi-gold inline-block" />
+          <span>Revenue</span>
+        </div>
+
+        <div className="absolute -right-8 top-1/2 transform -translate-y-1/2 rotate-90 text-xs text-pizzabi-muted flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-pizzabi-teal inline-block" />
+          <span>Orders</span>
+        </div>
+
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-pizzabi-muted">
+          Date
+        </div>
+      </div>
     </div>
   )
 }

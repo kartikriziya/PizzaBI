@@ -215,7 +215,7 @@ export async function getLineChartData(filters = {}) {
 
   const query = `
     SELECT
-      TO_CHAR(orders.order_date, 'DD') AS day,
+      TO_CHAR(orders.order_date, 'DD.MM.YYYY') AS day,
       SUM(orders.total)::numeric AS revenue,
       COUNT(DISTINCT orders.order_id)::int AS orders
     FROM orders
@@ -229,7 +229,7 @@ export async function getLineChartData(filters = {}) {
         : ""
     }
     ${whereSql}
-    GROUP BY TO_CHAR(orders.order_date, 'DD')
+    GROUP BY TO_CHAR(orders.order_date, 'DD.MM.YYYY')
     ORDER BY MIN(orders.order_date)
   `
 
@@ -306,28 +306,35 @@ export async function getSizeChartData(filters = {}) {
 }
 
 /**
- * Aggregates daily area performance structures.
+ * Aggregates hourly order activity for the area chart.
  */
 export async function getAreaChartData(filters = {}) {
   const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
 
   const query = `
+    WITH hourly_orders AS (
+      SELECT
+        EXTRACT(HOUR FROM orders.order_date)::int AS hour,
+        COUNT(DISTINCT orders.order_id)::int AS orders
+      FROM orders
+      LEFT JOIN stores ON orders.store_id = stores.store_id
+      ${
+        itemQuery.clauses.length > 0
+          ? `
+      LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+      LEFT JOIN products p ON oi.sku = p.sku
+      `
+          : ""
+      }
+      ${whereSql}
+      GROUP BY EXTRACT(HOUR FROM orders.order_date)
+    )
     SELECT
-      TO_CHAR(orders.order_date, 'DD') AS day,
-      SUM(orders.total)::numeric AS revenue
-    FROM orders
-    LEFT JOIN stores ON orders.store_id = stores.store_id
-    ${
-      itemQuery.clauses.length > 0
-        ? `
-    LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
-    LEFT JOIN products p ON oi.sku = p.sku
-    `
-        : ""
-    }
-    ${whereSql}
-    GROUP BY TO_CHAR(orders.order_date, 'DD')
-    ORDER BY MIN(orders.order_date)
+      h.hour,
+      COALESCE(ho.orders, 0)::int AS orders
+    FROM generate_series(0, 23) AS h(hour)
+    LEFT JOIN hourly_orders ho ON ho.hour = h.hour
+    ORDER BY h.hour
   `
 
   const result = await pool.query(query, [
@@ -336,8 +343,8 @@ export async function getAreaChartData(filters = {}) {
   ])
 
   return result.rows.map((row) => ({
-    day: row.day,
-    revenue: Number(row.revenue || 0),
+    hour: Number(row.hour),
+    orders: Number(row.orders || 0),
   }))
 }
 

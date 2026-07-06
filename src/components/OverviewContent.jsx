@@ -5,6 +5,7 @@ import {
   getSizeChartData,
 } from "../apis/chartApi"
 import { getKpiMetrics } from "../apis/kpiApi"
+import ChartArea from "./ChartArea"
 import KeyInsights from "./KeyInsights"
 import RecommendationsTable from "./RecommendationsTable"
 
@@ -77,6 +78,12 @@ export default function OverviewContent({ selectedFilters = {} }) {
             loading={loading}
             error={error}
           />
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <div className="w-full bg-pizzabi-card border border-pizzabi-muted/10 rounded-2xl p-4 md:p-6">
+          <ChartArea selectedFilters={selectedFilters} />
         </div>
       </section>
 

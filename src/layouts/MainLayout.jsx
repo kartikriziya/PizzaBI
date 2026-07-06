@@ -40,8 +40,6 @@ export default function MainLayout({ isDarkMode, toggleTheme, onLogout }) {
       </Sidebar>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        Shared filter bar — shown on Dashboard & Statistics and Overview, hidden
-        on Upload
         {/* Page content */}
         <div className="flex-1 overflow-auto">
           <Outlet />

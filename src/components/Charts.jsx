@@ -2,7 +2,6 @@ import React from "react"
 import ChartLine from "./ChartLine"
 import ChartBar from "./ChartBar"
 import ChartPie from "./ChartPie"
-import ChartArea from "./ChartArea"
 import ChartRadar from "./ChartRadar"
 import OrdersByWeekday from "./OrdersByWeekday"
 import Kpi from "./Kpi"
@@ -18,7 +17,6 @@ export default function Charts({ selectedFilters }) {
           <OrdersByWeekday selectedFilters={selectedFilters} />
           <ChartPie selectedFilters={selectedFilters} />
           <ChartRadar selectedFilters={selectedFilters} />
-          <ChartArea selectedFilters={selectedFilters} />
         </div>
       </div>
     </div>
