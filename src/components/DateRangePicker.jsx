@@ -65,34 +65,53 @@ function qEnd(y, q) {
   return new Date(y, q * 3, 0)
 }
 
-const PRESETS = [
-  { label: "Letzte 7 Tage", getRange: () => [sub(6), today] },
-  { label: "Letzte 30 Tage", getRange: () => [sub(29), today] },
-  {
-    label: "Letzter Monat",
-    getRange: () => [
-      new Date(today.getFullYear(), today.getMonth() - 1, 1),
-      new Date(today.getFullYear(), today.getMonth(), 0),
-    ],
-  },
-  { type: "divider" },
-  { label: "Q1 2024", getRange: () => [qStart(2024, 1), qEnd(2024, 1)] },
-  { label: "Q2 2024", getRange: () => [qStart(2024, 2), qEnd(2024, 2)] },
-  { label: "Q3 2024", getRange: () => [qStart(2024, 3), qEnd(2024, 3)] },
-  { label: "Q4 2024", getRange: () => [qStart(2024, 4), qEnd(2024, 4)] },
-  { type: "divider" },
-  { label: "Q1 2025", getRange: () => [qStart(2025, 1), qEnd(2025, 1)] },
-  { label: "Q2 2025", getRange: () => [qStart(2025, 2), qEnd(2025, 2)] },
-  { type: "divider" },
-  {
-    label: "Jahr 2024",
-    getRange: () => [new Date(2024, 0, 1), new Date(2024, 11, 31)],
-  },
-  {
-    label: "Jahr 2023",
-    getRange: () => [new Date(2023, 0, 1), new Date(2023, 11, 31)],
-  },
-]
+function buildPresets(year) {
+  const currentYear = Number.isFinite(year) ? year : today.getFullYear()
+
+  return [
+    { label: "Letzte 7 Tage", getRange: () => [sub(6), today] },
+    { label: "Letzte 30 Tage", getRange: () => [sub(29), today] },
+    {
+      label: "Letzter Monat",
+      getRange: () => [
+        new Date(today.getFullYear(), today.getMonth() - 1, 1),
+        new Date(today.getFullYear(), today.getMonth(), 0),
+      ],
+    },
+    { type: "divider" },
+    {
+      label: `Q1 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 1), qEnd(currentYear, 1)],
+    },
+    {
+      label: `Q2 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 2), qEnd(currentYear, 2)],
+    },
+    {
+      label: `Q3 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 3), qEnd(currentYear, 3)],
+    },
+    {
+      label: `Q4 ${currentYear}`,
+      getRange: () => [qStart(currentYear, 4), qEnd(currentYear, 4)],
+    },
+    { type: "divider" },
+    {
+      label: `Jahr ${currentYear}`,
+      getRange: () => [
+        new Date(currentYear, 0, 1),
+        new Date(currentYear, 11, 31),
+      ],
+    },
+    {
+      label: `Jahr ${currentYear - 1}`,
+      getRange: () => [
+        new Date(currentYear - 1, 0, 1),
+        new Date(currentYear - 1, 11, 31),
+      ],
+    },
+  ]
+}
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 const MONTHS_DE = [
@@ -216,6 +235,7 @@ export default function DateRangePicker({
     : new Date(2024, 3)
   const [leftMonth, setLeftMonth] = useState(defaultLeft)
   const rightMonth = new Date(leftMonth.getFullYear(), leftMonth.getMonth() + 1)
+  const presets = buildPresets(leftMonth.getFullYear())
 
   const containerRef = useRef(null)
 
@@ -275,7 +295,7 @@ export default function DateRangePicker({
           Quick Select
         </p>
         <div className="flex flex-col gap-0.5">
-          {PRESETS.map((p, i) =>
+          {presets.map((p, i) =>
             p.type === "divider" ? (
               <div
                 key={i}
