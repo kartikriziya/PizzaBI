@@ -168,7 +168,17 @@ export async function getKpiMetrics(filters = {}) {
       FROM orders
       LEFT JOIN stores ON orders.store_id = stores.store_id
     )
-    SELECT * FROM filtered_metrics, baseline_metrics
+    SELECT
+      filtered_metrics.order_count AS filtered_order_count,
+      filtered_metrics.revenue AS filtered_revenue,
+      filtered_metrics.pizzas_sold AS filtered_pizzas_sold,
+      filtered_metrics.customer_count AS filtered_customer_count,
+      baseline_metrics.order_count AS baseline_order_count,
+      baseline_metrics.revenue AS baseline_revenue,
+      baseline_metrics.pizzas_sold AS baseline_pizzas_sold,
+      baseline_metrics.customer_count AS baseline_customer_count
+    FROM filtered_metrics
+    CROSS JOIN baseline_metrics
   `
 
   const result = await pool.query(query, [
@@ -177,18 +187,18 @@ export async function getKpiMetrics(filters = {}) {
   ])
   const row = result.rows[0]
 
-  const revenue = Number(row.revenue || 0)
-  const orders = Number(row.order_count || 0)
-  const pizzasSold = Number(row.pizzas_sold || 0)
+  const revenue = Number(row.filtered_revenue || 0)
+  const orders = Number(row.filtered_order_count || 0)
+  const pizzasSold = Number(row.filtered_pizzas_sold || 0)
   const averageOrderValue = orders === 0 ? 0 : revenue / orders
-  const newCustomers = Number(row.customer_count || 0)
+  const newCustomers = Number(row.filtered_customer_count || 0)
 
-  const baselineRevenue = Number(row.revenue || 0) // Note: will be actual baseline from baseline_metrics
-  const baselineOrders = Number(row.order_count || 0) // Note: will be actual baseline from baseline_metrics
-  const baselinePizzas = Number(row.pizzas_sold || 0) // Note: will be actual baseline from baseline_metrics
+  const baselineRevenue = Number(row.baseline_revenue || 0)
+  const baselineOrders = Number(row.baseline_order_count || 0)
+  const baselinePizzas = Number(row.baseline_pizzas_sold || 0)
   const baselineAverageOrderValue =
     baselineOrders === 0 ? 0 : baselineRevenue / baselineOrders
-  const baselineCustomers = Number(row.customer_count || 0) // Note: will be actual baseline from baseline_metrics
+  const baselineCustomers = Number(row.baseline_customer_count || 0)
 
   return {
     totalRevenue: {
