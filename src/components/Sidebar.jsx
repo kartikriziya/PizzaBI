@@ -152,13 +152,6 @@ export default function Sidebar({
                           <LogOut size={16} />
                           <span>Logout</span>
                         </button>
-                        <button
-                          onClick={() => setMenuOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-pizzabi-muted hover:bg-pizzabi-card/60 hover:text-pizzabi-gold transition-colors text-sm"
-                        >
-                          <Settings size={16} />
-                          <span>Settings</span>
-                        </button>
                       </div>
                     )}
                   </>
