@@ -28,6 +28,8 @@
   --color-pizzabi-muted: #9ca3af;
   /* Primary foreground text — white in dark mode, near-black in light mode */
   --color-pizzabi-foreground: #ffffff;
+  /* Loader inner circle background for dark mode */
+  --color-pizzabi-loader-inner: #0f1117;
 }
 
 /* ==========================================================================
@@ -55,6 +57,8 @@
   --color-pizzabi-muted: #64748b;
   /* Primary foreground text — near-black in light mode */
   --color-pizzabi-foreground: #1e293b;
+  /* Loader inner circle background for light mode */
+  --color-pizzabi-loader-inner: #f8fafc;
 }
 
 /* Responsive helper for login cover image */

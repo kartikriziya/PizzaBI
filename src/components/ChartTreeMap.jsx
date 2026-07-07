@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { ResponsiveContainer, Tooltip, Treemap } from "recharts"
 import { getTreemapChartData } from "../apis/chartApi.js"
+import Loader from "./Loader"
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null
@@ -99,13 +100,14 @@ export default function ChartTreeMap({ selectedFilters }) {
         TreeMap · May 1-30, 2024
       </h2>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <div className="relative h-[280px]">
         {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-            Loading chart...
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
           </div>
         ) : (
-          <Treemap
+          <ResponsiveContainer width="100%" height="100%">
+            <Treemap
             data={data}
             dataKey="value"
             nameKey="name"
@@ -115,8 +117,9 @@ export default function ChartTreeMap({ selectedFilters }) {
           >
             <Tooltip content={<CustomTooltip />} />
           </Treemap>
+          </ResponsiveContainer>
         )}
-      </ResponsiveContainer>
+      </div>
     </div>
   )
 }

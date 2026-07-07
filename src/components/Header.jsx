@@ -11,6 +11,7 @@ import {
 import { getFilters, getDefaultDateRange } from "../apis/filterApi.js"
 // ----- Jahn 05.07 ------
 import DateRangePicker, { formatRangeValue } from "./DateRangePicker"
+import LoadingState from "./LoadingState"
 // ----- Jahn 05.07 ------
 
 function FilterChip({ filter, isOpen, onClick, options = [], onSelect }) {
@@ -38,14 +39,14 @@ function FilterChip({ filter, isOpen, onClick, options = [], onSelect }) {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm whitespace-nowrap transition-colors
           ${
             isOpen
-              ? "bg-pizzabi-card border-pizzabi-amber text-white"
+              ? "bg-pizzabi-card border-pizzabi-amber text-pizzabi-foreground"
               : "bg-pizzabi-card bg-opacity-80 border-pizzabi-muted/20 hover:bg-opacity-90 hover:border-pizzabi-muted/40 text-pizzabi-muted"
           }`}
       >
         <Icon size={14} className={filter.iconColor} />
         <span className="text-xs font-medium">{filter.label}</span>
         <span
-          className={`font-semibold text-xs ${isActive ? "text-white" : "text-pizzabi-muted"}`}
+          className={`font-semibold text-xs ${isActive ? "text-pizzabi-foreground" : "text-pizzabi-muted"}`}
         >
           {filter.value}
         </span>
@@ -77,7 +78,7 @@ function FilterChip({ filter, isOpen, onClick, options = [], onSelect }) {
                 onSelect(option)
                 onClick()
               }}
-              className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors hover:bg-white/5 ${filter.value === option ? "text-pizzabi-amber font-semibold bg-pizzabi-amber/10" : "text-white"}`}
+              className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors hover:bg-white/5 ${filter.value === option ? "text-pizzabi-amber font-semibold bg-pizzabi-amber/10" : "text-slate-400"}`}
             >
               {option}
             </button>
@@ -411,15 +412,26 @@ export default function PizzaSalesHeader({
 
       {/* Filter track — overflow-visible layout lets absolute elements display properly */}
       <div className="flex gap-2 overflow-visible pb-1 clean-scrollbar">
-        {/* ----- Jahn 05.07 ------ */}
-        <button
+        {loading ? (
+          <LoadingState
+            loading={loading}
+            message="Loading filters..."
+            size="sm"
+            className="w-full min-h-10 border-none bg-transparent"
+          >
+            <div />
+          </LoadingState>
+        ) : (
+          <>
+            {/* ----- Jahn 05.07 ------ */}
+            <button
           type="button"
           ref={dateRangeChipRef}
           onClick={toggleDateRangeDropdown}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm whitespace-nowrap transition-colors
             ${
               dateRangeOpen
-                ? "bg-pizzabi-card border-pizzabi-amber text-white"
+                ? "bg-pizzabi-card border-pizzabi-amber text-pizzabi-foreground"
                 : "bg-pizzabi-card bg-opacity-80 border-pizzabi-muted/20 hover:bg-opacity-90 hover:border-pizzabi-muted/40 text-pizzabi-muted"
             }`}
         >
@@ -433,7 +445,7 @@ export default function PizzaSalesHeader({
               !isDefaultDateRange &&
               selectedFilters.startDate &&
               selectedFilters.endDate
-                ? "text-white"
+                ? "text-pizzabi-foreground"
                 : "text-pizzabi-muted"
             }`}
           >
@@ -453,16 +465,18 @@ export default function PizzaSalesHeader({
           />
         </button>
         {/* ----- Jahn 05.07 ------ */}
-        {filtersConfig.map((f) => (
-          <FilterChip
-            key={f.id}
-            filter={f}
-            options={f.options}
-            isOpen={activeDropdown === f.id}
-            onClick={() => toggleDropdown(f.id)}
-            onSelect={(val) => handleSelectFilter(f.id, val)}
-          />
-        ))}
+            {filtersConfig.map((f) => (
+              <FilterChip
+                key={f.id}
+                filter={f}
+                options={f.options}
+                isOpen={activeDropdown === f.id}
+                onClick={() => toggleDropdown(f.id)}
+                onSelect={(val) => handleSelectFilter(f.id, val)}
+              />
+            ))}
+          </>
+        )}
       </div>
 
       {/* ----- Jahn 05.07 ------ */}

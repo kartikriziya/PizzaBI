@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react"
 import { getKpiMetrics } from "../apis/kpiApi.js"
+import LoadingState from "./LoadingState"
 
 function Card({ bg, icon, label, value, delta }) {
   return (
@@ -98,20 +99,18 @@ export default function Kpi({ selectedFilters = {} }) {
   return (
     <div className="mb-4">
       {error && <p className="mb-3 text-sm text-pizzabi-red">{error}</p>}
-      <div className="grid gap-4 p-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
-        {loading && !metrics
-          ? Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="animate-pulse rounded-2xl border border-pizzabi-muted/20 bg-white/5 p-4 shadow-sm"
-              >
-                <div className="h-12 w-12 rounded-full bg-white/10" />
-                <div className="mt-3 h-3 w-24 rounded bg-white/10" />
-                <div className="mt-2 h-6 w-24 rounded bg-white/10" />
-              </div>
-            ))
-          : cards.map((card) => <Card key={card.label} {...card} />)}
-      </div>
+      <LoadingState
+        loading={loading && !metrics}
+        message="Loading KPI metrics..."
+        size="md"
+        className="min-h-36 border-none bg-transparent"
+      >
+        <div className="grid gap-4 p-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
+          {cards.map((card) => (
+            <Card key={card.label} {...card} />
+          ))}
+        </div>
+      </LoadingState>
     </div>
   )
 }

@@ -12,6 +12,7 @@ import {
 import { COLORS, tooltipStyle } from "../constants/data"
 import { formatRangeValue } from "./DateRangePicker"
 import { getWeekdayChartData } from "../apis/chartApi.js"
+import Loader from "./Loader"
 
 export default function OrdersByWeekday({ selectedFilters }) {
   const [data, setData] = useState([])
@@ -45,13 +46,13 @@ export default function OrdersByWeekday({ selectedFilters }) {
       <p className="text-pizzabi-muted text-xs mb-0.5">Orders by weekday</p>
       <h2 className="text-pizzabi-gold font-medium text-lg mb-4">{rangeLabel}</h2>
 
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={240}>
-          {loading ? (
-            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-              Loading chart...
-            </div>
-          ) : (
+      <div className="relative h-[240px]">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               margin={{ top: 24, right: 16, bottom: 0, left: 8 }}
@@ -89,8 +90,8 @@ export default function OrdersByWeekday({ selectedFilters }) {
               />
             </Bar>
             </BarChart>
-          )}
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
 
         <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted">
           Orders

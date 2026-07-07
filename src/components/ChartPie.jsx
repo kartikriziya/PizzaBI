@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts"
 import { SIZE_COLORS, tooltipStyle } from "../constants/data"
 import { getSizeChartData } from "../apis/chartApi.js"
+import Loader from "./Loader"
 
 const RADIAN = Math.PI / 180
 
@@ -61,13 +62,14 @@ export default function ChartPie({ selectedFilters }) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
+      <div className="relative h-[240px]">
         {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-            Loading chart...
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
           </div>
         ) : (
-          <PieChart>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
             <Pie
               data={data}
               cx="50%"
@@ -94,8 +96,9 @@ export default function ChartPie({ selectedFilters }) {
               formatter={(value) => [`${value}%`, "Share"]}
             />
           </PieChart>
+          </ResponsiveContainer>
         )}
-      </ResponsiveContainer>
+      </div>
     </div>
   )
 }
