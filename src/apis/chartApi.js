@@ -49,3 +49,11 @@ export const getWeekdayChartData = async (filters = {}) => {
 
   return response.data
 }
+
+export const getCoOccurrenceMatrixData = async (filters = {}) => {
+  const response = await axios.get(`${API_URL}/dashboard/chart/co-occurrence`, {
+    params: filters,
+  })
+
+  return response.data
+}

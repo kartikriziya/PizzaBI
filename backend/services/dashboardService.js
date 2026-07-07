@@ -51,6 +51,7 @@ function buildItemConditions(filters) {
 
   addCondition("p.category = ?", filters.category)
   addCondition("p.size = ?", filters.size)
+  addCondition("p.name = ?", filters.pizza)
 
   return conditions
 }
@@ -103,6 +104,7 @@ export function buildFilterClause(filters) {
     state: filters.state || "",
     category: filters.category || "",
     size: filters.size || "",
+    pizza: filters.pizza || "",
     startDate: filters.startDate || "",
     endDate: filters.endDate || "",
   }
@@ -466,6 +468,77 @@ export async function getWeekdayChartData(filters = {}) {
     day: row.day,
     orders: Number(row.orders || 0),
   }))
+}
+
+export async function getCoOccurrenceMatrixData(filters = {}) {
+  const { baseQuery, itemQuery, whereSql } = buildFilterClause(filters)
+
+  const whereClause = whereSql
+    ? `${whereSql} AND p.name IS NOT NULL`
+    : `WHERE p.name IS NOT NULL`
+
+  const query = `
+    WITH order_pizzas AS (
+      SELECT DISTINCT
+        orders.order_id,
+        TRIM(p.name) AS pizza_name
+      FROM orders
+      LEFT JOIN stores ON orders.store_id = stores.store_id
+      LEFT JOIN orderitems oi ON oi.order_id = orders.order_id
+      LEFT JOIN products p ON oi.sku = p.sku
+      ${whereClause}
+    ),
+    pair_counts AS (
+      SELECT
+        a.pizza_name AS pizza_x,
+        b.pizza_name AS pizza_y,
+        COUNT(*)::int AS value
+      FROM order_pizzas a
+      JOIN order_pizzas b
+        ON a.order_id = b.order_id
+       AND a.pizza_name < b.pizza_name
+      GROUP BY a.pizza_name, b.pizza_name
+    )
+    SELECT
+      pizza_x,
+      pizza_y,
+      value
+    FROM pair_counts
+    ORDER BY value DESC, pizza_x, pizza_y
+  `
+
+  const result = await pool.query(query, [
+    ...baseQuery.values,
+    ...itemQuery.values,
+  ])
+
+  const pizzaNames = [
+    ...new Set(result.rows.flatMap((row) => [row.pizza_x, row.pizza_y])),
+  ].sort()
+
+  const indexByName = Object.fromEntries(
+    pizzaNames.map((name, index) => [name, index]),
+  )
+
+  const matrix = Array.from({ length: pizzaNames.length }, () =>
+    Array(pizzaNames.length).fill(0),
+  )
+
+  result.rows.forEach((row) => {
+    const x = indexByName[row.pizza_x]
+    const y = indexByName[row.pizza_y]
+    const value = Number(row.value || 0)
+
+    if (x !== undefined && y !== undefined) {
+      matrix[y][x] = value
+      matrix[x][y] = value
+    }
+  })
+
+  return {
+    pizzas: pizzaNames,
+    matrix,
+  }
 }
 
 /**

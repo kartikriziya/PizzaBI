@@ -8,6 +8,7 @@ import {
   getAreaChartData,
   getRadarChartData,
   getWeekdayChartData,
+  getCoOccurrenceMatrixData,
 } from "../controller/dashboardController.js"
 
 const router = Router()
@@ -23,5 +24,6 @@ router.get("/chart/size", getSizeChartData)
 router.get("/chart/area", getAreaChartData)
 router.get("/chart/radar", getRadarChartData)
 router.get("/chart/weekday", getWeekdayChartData)
+router.get("/chart/co-occurrence", getCoOccurrenceMatrixData)
 
 export default router

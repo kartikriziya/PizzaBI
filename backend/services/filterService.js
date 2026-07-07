@@ -24,6 +24,7 @@ async function getAvailableOptions(fieldName, filters) {
     { key: "city", column: "s.city" },
     { key: "category", column: "p.category" },
     { key: "size", column: "p.size" },
+    { key: "pizza", column: "p.name" },
   ]
 
   // Build WHERE clause for other fields
@@ -47,7 +48,9 @@ async function getAvailableOptions(fieldName, filters) {
           ? "s.city"
           : fieldName === "category"
             ? "p.category"
-            : "p.size"
+            : fieldName === "size"
+              ? "p.size"
+              : "p.name"
     } AS value
     FROM orders o
     JOIN stores s ON s.store_id = o.store_id
@@ -69,6 +72,7 @@ function buildWhereClause(filters, values) {
     { key: "city", column: "s.city" },
     { key: "category", column: "p.category" },
     { key: "size", column: "p.size" },
+    { key: "pizza", column: "p.name" },
   ]
 
   fieldMapping.forEach(({ key, column }) => {
@@ -92,6 +96,7 @@ async function fetchFilteredDimensions(filters = {}) {
     city: normalizeFilterValue(filters.city),
     category: normalizeFilterValue(filters.category),
     size: normalizeFilterValue(filters.size),
+    pizza: normalizeFilterValue(filters.pizza),
   }
 
   const values = []
@@ -103,7 +108,8 @@ async function fetchFilteredDimensions(filters = {}) {
       s.city AS city,
       s.state AS state,
       p.category AS category,
-      p.size AS size
+      p.size AS size,
+      p.name AS pizza
     FROM orders o
     JOIN stores s ON s.store_id = o.store_id
     JOIN orderitems oi ON oi.order_id = o.order_id
@@ -162,11 +168,12 @@ export async function getFilters(filters = {}) {
     city: normalizeFilterValue(filters.city),
     category: normalizeFilterValue(filters.category),
     size: normalizeFilterValue(filters.size),
+    pizza: normalizeFilterValue(filters.pizza),
   }
 
   // Validate that selected filters are still available
   const cleanedFilters = { ...normalizedFilters }
-  for (const fieldName of ["state", "city", "category", "size"]) {
+  for (const fieldName of ["state", "city", "category", "size", "pizza"]) {
     const selectedValue = cleanedFilters[fieldName]
     if (selectedValue === null) continue
 
@@ -181,6 +188,7 @@ export async function getFilters(filters = {}) {
   const cities = await getAvailableOptions("city", cleanedFilters)
   const categories = await getAvailableOptions("category", cleanedFilters)
   const sizes = await getAvailableOptions("size", cleanedFilters)
+  const pizzas = await getAvailableOptions("pizza", cleanedFilters)
 
   return {
     table: "joined_sales",
@@ -191,10 +199,12 @@ export async function getFilters(filters = {}) {
     states,
     categories,
     sizes,
+    pizzas,
     availableCities: cities,
     availableStates: states,
     availableCategories: categories,
     availableSizes: sizes,
+    availablePizzas: pizzas,
   }
 }
 

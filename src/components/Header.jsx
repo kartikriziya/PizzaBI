@@ -127,6 +127,7 @@ function createEmptyFilterState() {
     state: "",
     category: "",
     size: "",
+    pizza: "",
   }
 }
 // ----- Jahn 05.07 ------
@@ -142,6 +143,7 @@ export default function PizzaSalesHeader({
     states: [],
     categories: [],
     sizes: [],
+    pizzas: [],
   })
 
   const [selectedFilters, setSelectedFilters] = useState(selectedFiltersProp)
@@ -203,6 +205,7 @@ export default function PizzaSalesHeader({
           state: selectedFilters.state || undefined,
           category: selectedFilters.category || undefined,
           size: selectedFilters.size || undefined,
+          pizza: selectedFilters.pizza || undefined,
         }
 
         const data = await getFilters(query)
@@ -213,6 +216,7 @@ export default function PizzaSalesHeader({
           states: data.states || [],
           categories: data.categories || [],
           sizes: data.sizes || [],
+          pizzas: data.pizzas || [],
         })
 
         if (data.filters) {
@@ -222,6 +226,7 @@ export default function PizzaSalesHeader({
             state: data.filters.state ?? prev.state,
             category: data.filters.category ?? prev.category,
             size: data.filters.size ?? prev.size,
+            pizza: data.filters.pizza ?? prev.pizza,
           }))
         }
       } catch (err) {
@@ -245,6 +250,7 @@ export default function PizzaSalesHeader({
     selectedFilters.state,
     selectedFilters.category,
     selectedFilters.size,
+    selectedFilters.pizza,
   ])
 
   useEffect(() => {
@@ -289,6 +295,14 @@ export default function PizzaSalesHeader({
         iconColor: "text-pizzabi-muted",
         options: filterOptions.sizes,
       },
+      {
+        id: "pizza",
+        label: "Pizza",
+        value: selectedFilters.pizza || "All",
+        icon: Tag,
+        iconColor: "text-pizzabi-muted",
+        options: filterOptions.pizzas,
+      },
     ],
     [selectedFilters, filterOptions],
   )
@@ -328,6 +342,8 @@ export default function PizzaSalesHeader({
       })
     if (selectedFilters.size)
       tags.push({ id: "size", label: `Size: ${selectedFilters.size}` })
+    if (selectedFilters.pizza)
+      tags.push({ id: "pizza", label: `Pizza: ${selectedFilters.pizza}` })
     return tags
   }, [selectedFilters, isDefaultDateRange])
 
