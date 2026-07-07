@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout"
 import Dashboard from "../pages/Dashboard"
 import StatisticDashboard from "../pages/StatisticDashboad"
 import OverviewDashboard from "../pages/OverviewDashboard"
+import ProjectPlan from "../pages/ProjectPlan"
 import UploadFile from "../components/UploadFile"
 
 const DEFAULT_FILTERS = {
@@ -72,6 +73,7 @@ function AppRouterContent({ isDarkMode, toggleTheme, onLogout }) {
             />
           }
         />
+        <Route path="/project-plan" element={<ProjectPlan />} />
         <Route path="/upload" element={<UploadFile />} />
       </Route>
     </Routes>
