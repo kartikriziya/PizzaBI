@@ -1,5 +1,6 @@
 import React, { useMemo } from "react"
 import { TrendingUp, MapPin, Package, Zap, Star } from "lucide-react"
+import LoadingState from "./LoadingState"
 
 function InsightCard({ icon, title, value, description, color }) {
   return (
@@ -95,17 +96,14 @@ export default function KeyInsights({ overviewData, loading, error }) {
 
   if (loading && !overviewData) {
     return (
-      <div className="w-full">
-        <div className="mb-4 h-6 w-48 animate-pulse rounded bg-white/10" />
-        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-28 animate-pulse rounded-2xl border border-white/10 bg-white/5"
-            />
-          ))}
-        </div>
-      </div>
+      <LoadingState
+        loading
+        message="Loading insights..."
+        size="md"
+        className="min-h-40 border-none bg-transparent"
+      >
+        <div className="w-full" />
+      </LoadingState>
     )
   }
 

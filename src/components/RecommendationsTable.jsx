@@ -1,4 +1,5 @@
 import React, { useMemo } from "react"
+import LoadingState from "./LoadingState"
 
 const C = {
   bg: "#0f1117",
@@ -75,9 +76,14 @@ export default function RecommendationsTable({ overviewData, loading, error }) {
 
   if (loading && !overviewData) {
     return (
-      <div className="rounded-lg border border-white/10 p-4 text-sm text-pizzabi-muted">
-        Loading recommendations...
-      </div>
+      <LoadingState
+        loading
+        message="Loading recommendations..."
+        size="md"
+        className="min-h-40 border-none bg-transparent"
+      >
+        <div className="w-full" />
+      </LoadingState>
     )
   }
 

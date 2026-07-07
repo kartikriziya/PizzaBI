@@ -11,6 +11,7 @@ import {
 } from "recharts"
 import { CAT_COLORS, tooltipStyle } from "../constants/data"
 import { getCategoryChartData } from "../apis/chartApi.js"
+import Loader from "./Loader"
 
 export default function ChartBar({ selectedFilters }) {
   const [data, setData] = useState([])
@@ -49,8 +50,13 @@ export default function ChartBar({ selectedFilters }) {
         ))}
       </div>
 
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={240}>
+      <div className="relative h-[240px]">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
           <BarChart
             layout="vertical"
             data={data}
@@ -92,7 +98,8 @@ export default function ChartBar({ selectedFilters }) {
             ))}
           </Bar>
           </BarChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
 
         <div
           className="absolute bottom-2 left-1/2 text-xs text-pizzabi-muted"

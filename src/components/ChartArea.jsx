@@ -11,6 +11,7 @@ import {
 import { COLORS, tooltipStyle } from "../constants/data"
 import { getAreaChartData } from "../apis/chartApi.js"
 import { formatRangeValue } from "./DateRangePicker"
+import Loader from "./Loader"
 
 export default function ChartArea({ selectedFilters }) {
   const [data, setData] = useState([])
@@ -45,13 +46,13 @@ export default function ChartArea({ selectedFilters }) {
       <p className="text-pizzabi-muted text-xs mb-0.5">Orders by hour</p>
       <h2 className="text-pizzabi-gold font-medium text-lg mb-4">{rangeLabel}</h2>
 
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={240}>
-          {loading ? (
-            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-              Loading chart...
-            </div>
-          ) : (
+      <div className="relative h-[240px]">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
               margin={{ top: 32, right: 16, bottom: 0, left: 8 }}
@@ -102,15 +103,15 @@ export default function ChartArea({ selectedFilters }) {
                 activeDot={{ r: 5, strokeWidth: 0, fill: COLORS.gold }}
               />
             </AreaChart>
-          )}
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
 
-        <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted flex items-center gap-2">
+        <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-pizzabi-gold inline-block" />
           <span>Orders</span>
         </div>
 
-        <div className="absolute bottom--1 left-1/2 transform -translate-x-1/2 text-xs text-pizzabi-muted">
+        <div className="absolute bottom-0.3 left-1/2 transform -translate-x-1/2 text-xs text-pizzabi-muted">
           Time
         </div>
       </div>

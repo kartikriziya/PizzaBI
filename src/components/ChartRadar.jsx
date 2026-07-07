@@ -10,6 +10,7 @@ import {
 } from "recharts"
 import { COLORS, tooltipStyle } from "../constants/data"
 import { getRadarChartData } from "../apis/chartApi.js"
+import Loader from "./Loader"
 
 function getNiceStep(maxValue, maxTicks = 5) {
   if (!Number.isFinite(maxValue) || maxValue <= 0) return 100000
@@ -60,13 +61,13 @@ export default function ChartRadar({ selectedFilters }) {
       <p className="text-pizzabi-muted text-xs mb-0.5">Sales by region</p>
       <h2 className="text-pizzabi-gold font-medium text-lg mb-4">USA regions</h2>
 
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={360}>
-          {loading ? (
-            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-              Loading chart...
-            </div>
-          ) : (
+      <div className="relative h-[360px]">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               data={data}
               cx="48%"
@@ -108,8 +109,8 @@ export default function ChartRadar({ selectedFilters }) {
                 strokeWidth={2}
               />
             </RadarChart>
-          )}
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
 
         <div className="absolute top-3 right-3 bg-pizzabi-card/80 border border-pizzabi-muted/20 rounded-md px-3 py-1 text-xs flex items-center gap-3">
           <span className="w-2.5 h-2.5 rounded-full bg-pizzabi-gold inline-block" />

@@ -35,7 +35,7 @@ export default function Loader({
         <div
           className="absolute inset-1"
           style={{
-            background: "#0f1117",
+            background: "var(--color-pizzabi-loader-inner)",
             borderRadius: "50%",
           }}
         />

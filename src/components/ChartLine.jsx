@@ -11,6 +11,7 @@ import {
 import { COLORS, tooltipStyle } from "../constants/data"
 import { getLineChartData } from "../apis/chartApi.js"
 import { formatRangeValue } from "./DateRangePicker"
+import Loader from "./Loader"
 
 export default function ChartLine({ selectedFilters }) {
   const [data, setData] = useState([])
@@ -56,13 +57,13 @@ export default function ChartLine({ selectedFilters }) {
         </span>
       </div>
 
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={240}>
-          {loading ? (
-            <div className="flex h-full items-center justify-center text-sm text-pizzabi-muted">
-              Loading chart...
-            </div>
-          ) : (
+      <div className="relative h-[240px]">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader size="md" message="Loading chart..." fullScreen={false} />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data}
               margin={{ top: 4, right: 20, bottom: 0, left: 10 }}
@@ -120,8 +121,8 @@ export default function ChartLine({ selectedFilters }) {
               activeDot={{ r: 5 }}
             />
             </LineChart>
-          )}
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
 
         <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-pizzabi-muted flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-pizzabi-gold inline-block" />
