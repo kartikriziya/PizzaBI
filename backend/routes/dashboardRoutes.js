@@ -1,5 +1,6 @@
 import { Router } from "express"
 import {
+  getAllDashboardData,
   getKpiMetrics,
   getLineChartData,
   getCategoryChartData,
@@ -11,6 +12,10 @@ import {
 
 const router = Router()
 
+// Optimized endpoint: combines all dashboard data into single request
+router.get("/all", getAllDashboardData)
+
+// Individual endpoints (still available for backward compatibility)
 router.get("/kpi", getKpiMetrics)
 router.get("/chart/line", getLineChartData)
 router.get("/chart/category", getCategoryChartData)

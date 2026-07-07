@@ -202,6 +202,72 @@ async function getForeignKeys(client, tableName) {
   }))
 }
 
+/**
+ * Creates performance indexes on known tables after data insertion.
+ * Uses IF NOT EXISTS to avoid errors if indexes already exist.
+ * Called after all data is loaded and restored.
+ */
+async function createPerformanceIndexes(client, tableInfos) {
+  const tableNames = new Set(tableInfos.map((t) => t.tableName))
+
+  const indexDefinitions = [
+    // Orders table - critical for date range and joins
+    {
+      table: "orders",
+      indexes: [
+        { name: "idx_orders_order_date", columns: ["order_date"] },
+        { name: "idx_orders_store_id", columns: ["store_id"] },
+        { name: "idx_orders_customer_id", columns: ["customer_id"] },
+      ],
+    },
+    // Stores table - critical for location filters
+    {
+      table: "stores",
+      indexes: [
+        { name: "idx_stores_city", columns: ["city"] },
+        { name: "idx_stores_state", columns: ["state"] },
+        { name: "idx_stores_city_state", columns: ["city", "state"] },
+      ],
+    },
+    // Products table - critical for category and size filters
+    {
+      table: "products",
+      indexes: [
+        { name: "idx_products_category", columns: ["category"] },
+        { name: "idx_products_size", columns: ["size"] },
+        { name: "idx_products_sku", columns: ["sku"] },
+      ],
+    },
+    // OrderItems table - join table between orders and products
+    {
+      table: "orderitems",
+      indexes: [
+        { name: "idx_orderitems_order_id", columns: ["order_id"] },
+        { name: "idx_orderitems_sku", columns: ["sku"] },
+      ],
+    },
+  ]
+
+  for (const indexDef of indexDefinitions) {
+    // Skip if table wasn't in this import
+    if (!tableNames.has(indexDef.table)) continue
+
+    for (const index of indexDef.indexes) {
+      const columnList = index.columns.map((c) => `"${c}"`).join(", ")
+      try {
+        await client.query(
+          `CREATE INDEX IF NOT EXISTS "${index.name}" ON "${indexDef.table}" (${columnList})`,
+        )
+      } catch (err) {
+        // Log but don't fail - index may already exist from previous imports
+        console.log(
+          `[csvImportService] Index creation note for ${index.name}: ${err.message}`,
+        )
+      }
+    }
+  }
+}
+
 // ── Core service functions ────────────────────────────────────────────────────
 
 /**
@@ -378,6 +444,9 @@ export async function importFiles(confirmedFiles) {
 
       await addForeignKey(client, fk)
     }
+
+    // Create performance indexes on known tables
+    await createPerformanceIndexes(client, tableInfos)
 
     await client.query("COMMIT")
     return results

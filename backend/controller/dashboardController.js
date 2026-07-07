@@ -6,7 +6,18 @@ import {
   getAreaChartData as fetchAreaChartData,
   getRadarChartData as fetchRadarChartData,
   getWeekdayChartData as fetchWeekdayChartData,
+  getAllDashboardData as fetchAllDashboardData,
 } from "../services/dashboardService.js"
+
+export async function getAllDashboardData(req, res) {
+  try {
+    const data = await fetchAllDashboardData(req.query)
+    res.json(data)
+  } catch (error) {
+    console.error("[dashboard] combined data request failed", error)
+    res.status(500).json({ error: "Unable to load dashboard data." })
+  }
+}
 
 export async function getKpiMetrics(req, res) {
   try {
