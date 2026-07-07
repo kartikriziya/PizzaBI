@@ -4,6 +4,9 @@ import Loader from "./Loader"
 
 const API = "http://localhost:5000/api/csv"
 
+const getFileKey = (file) =>
+  `${file.name.toLowerCase()}::${file.size}::${file.lastModified}`
+
 // Reuses your existing UploadFile logic but wired into the CSV preview/confirm flow
 export default function UploadFile({ maxFiles = 20 }) {
   const [files, setFiles] = useState([])
@@ -12,6 +15,7 @@ export default function UploadFile({ maxFiles = 20 }) {
   const [results, setResults] = useState([])
   const [error, setError] = useState(null)
   const [dragging, setDragging] = useState(false)
+  const [uploadingFileName, setUploadingFileName] = useState("")
   const inputRef = useRef(null)
 
   // Cleanup object URLs on unmount
@@ -29,12 +33,53 @@ export default function UploadFile({ maxFiles = 20 }) {
       setError("Please select CSV files only.")
       return
     }
+
+    let addError = null
     setError(null)
-    const remaining = Math.max(0, maxFiles - files.length)
-    const toAdd = csvOnly
-      .slice(0, remaining)
-      .map((f) => ({ file: f, preview: null }))
-    setFiles((prev) => [...prev, ...toAdd])
+    setFiles((prev) => {
+      const existingKeys = new Set(prev.map(({ file }) => getFileKey(file)))
+      const deduped = []
+      const duplicates = []
+
+      csvOnly.forEach((file) => {
+        const key = getFileKey(file)
+        if (existingKeys.has(key)) {
+          duplicates.push(file.name)
+        } else {
+          existingKeys.add(key)
+          deduped.push(file)
+        }
+      })
+
+      const remainingSlots = Math.max(0, maxFiles - prev.length)
+      const accepted = deduped.slice(0, remainingSlots)
+
+      if (duplicates.length) {
+        addError =
+          duplicates.length === 1
+            ? `Skipped duplicate file: ${duplicates[0]}`
+            : `Skipped duplicate files: ${duplicates.join(", ")}`
+      }
+
+      if (accepted.length < deduped.length) {
+        addError = addError
+          ? `${addError} You can only upload up to ${maxFiles} files.`
+          : `You can only upload up to ${maxFiles} files.`
+      }
+
+      return [
+        ...prev,
+        ...accepted.map((file) => ({
+          file,
+          preview: null,
+          uploadStatus: "queued",
+        })),
+      ]
+    })
+
+    if (addError) {
+      setError(addError)
+    }
   }
 
   const handleRemove = (index) => {
@@ -55,25 +100,80 @@ export default function UploadFile({ maxFiles = 20 }) {
 
   const handlePreview = async () => {
     if (!files.length) return
+
     setStatus("uploading")
     setError(null)
+    setPreviews([])
+    setUploadingFileName("")
 
-    const formData = new FormData()
-    files.forEach((f) => formData.append("files", f.file))
+    const successfulPreviews = []
+    const queue = [...files]
 
-    try {
-      const res = await fetch(`${API}/preview`, {
-        method: "POST",
-        body: formData,
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
-      setPreviews(data.previews)
-      setStatus("confirming")
-    } catch (err) {
-      setError(err.message)
-      setStatus("error")
+    for (let index = 0; index < queue.length; index += 1) {
+      const currentFile = queue[index]
+      setUploadingFileName(currentFile.file.name)
+      setFiles((prev) =>
+        prev.map((item, itemIndex) => ({
+          ...item,
+          uploadStatus:
+            itemIndex === index
+              ? "uploading"
+              : item.uploadStatus === "uploaded"
+                ? "uploaded"
+                : item.uploadStatus === "failed"
+                  ? "failed"
+                  : "queued",
+        })),
+      )
+
+      try {
+        const formData = new FormData()
+        formData.append("files", currentFile.file)
+
+        const res = await fetch(`${API}/preview`, {
+          method: "POST",
+          body: formData,
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+
+        const preview = data.previews?.[0]
+        if (preview) {
+          successfulPreviews.push(preview)
+        }
+
+        setFiles((prev) =>
+          prev.map((item, itemIndex) => ({
+            ...item,
+            uploadStatus:
+              itemIndex === index
+                ? "uploaded"
+                : item.uploadStatus === "failed"
+                  ? "failed"
+                  : item.uploadStatus === "uploading"
+                    ? "queued"
+                    : item.uploadStatus,
+          })),
+        )
+      } catch (err) {
+        setFiles((prev) =>
+          prev.map((item, itemIndex) => ({
+            ...item,
+            uploadStatus: itemIndex === index ? "failed" : item.uploadStatus,
+          })),
+        )
+        setError(
+          `Failed while analyzing ${currentFile.file.name}: ${err.message}`,
+        )
+        setStatus("error")
+        setUploadingFileName("")
+        return
+      }
     }
+
+    setPreviews(successfulPreviews)
+    setStatus("confirming")
+    setUploadingFileName("")
   }
 
   // ── Step 2a: user confirms → /confirm ────────────────────────────────────
@@ -81,26 +181,52 @@ export default function UploadFile({ maxFiles = 20 }) {
   const handleConfirm = async () => {
     setStatus("importing")
     setError(null)
+    setUploadingFileName("")
+
     try {
-      const res = await fetch(`${API}/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          confirmedFiles: previews.map((p) => ({
-            tempPath: p.tempPath,
-            tableName: p.tableName,
-            filename: p.filename,
-          })),
-        }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
-      setResults(data.results)
+      const importedResults = []
+      const confirmedFiles = previews.map((p) => ({
+        tempPath: p.tempPath,
+        tableName: p.tableName,
+        filename: p.filename,
+      }))
+
+      for (const file of confirmedFiles) {
+        setUploadingFileName(file.filename)
+        setFiles((prev) =>
+          prev.map((item) =>
+            item.file.name === file.filename
+              ? { ...item, uploadStatus: "importing" }
+              : item,
+          ),
+        )
+
+        const res = await fetch(`${API}/confirm-file`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmedFile: file }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error(data.error)
+
+        importedResults.push(data.result)
+        setFiles((prev) =>
+          prev.map((item) =>
+            item.file.name === file.filename
+              ? { ...item, uploadStatus: "imported" }
+              : item,
+          ),
+        )
+      }
+
+      setResults(importedResults)
       setStatus("done")
       setFiles([])
     } catch (err) {
       setError(err.message)
       setStatus("error")
+    } finally {
+      setUploadingFileName("")
     }
   }
 
@@ -114,6 +240,7 @@ export default function UploadFile({ maxFiles = 20 }) {
     }).catch(() => {})
     setPreviews([])
     setStatus("idle")
+    setUploadingFileName("")
   }
 
   const navigate = useNavigate()
@@ -124,6 +251,7 @@ export default function UploadFile({ maxFiles = 20 }) {
     setResults([])
     setError(null)
     setStatus("idle")
+    setUploadingFileName("")
   }
 
   const handleReturnToDashboard = () => {
@@ -187,7 +315,27 @@ export default function UploadFile({ maxFiles = 20 }) {
   if (status === "confirming" || status === "importing") {
     // Show loader while importing
     if (status === "importing") {
-      return <Loader size="lg" message="Importing data..." />
+      return (
+        <div className="space-y-3">
+          <Loader
+            size="lg"
+            message={
+              uploadingFileName
+                ? `Importing ${uploadingFileName}...`
+                : "Importing data..."
+            }
+          />
+          <p className="text-sm text-pizzabi-muted text-center">
+            {uploadingFileName
+              ? `Currently processing ${uploadingFileName}`
+              : "Preparing import..."}
+          </p>
+          <p className="text-xs text-pizzabi-muted text-center">
+            {files.filter((item) => item.uploadStatus === "imported").length}/
+            {files.length} files imported
+          </p>
+        </div>
+      )
     }
 
     return (
@@ -371,7 +519,21 @@ export default function UploadFile({ maxFiles = 20 }) {
 
       {/* Loader while uploading */}
       {status === "uploading" && (
-        <Loader size="md" message="Analyzing CSV files..." />
+        <div className="space-y-2">
+          <Loader
+            size="md"
+            message={
+              uploadingFileName
+                ? `Analyzing ${uploadingFileName}...`
+                : "Analyzing CSV files..."
+            }
+          />
+          <p className="text-xs text-pizzabi-muted">
+            {files.filter((item) => item.uploadStatus === "uploaded").length}/
+            {files.length} files uploaded • currently processing{" "}
+            {uploadingFileName}
+          </p>
+        </div>
       )}
 
       {/* Error */}
@@ -383,32 +545,66 @@ export default function UploadFile({ maxFiles = 20 }) {
 
       {/* File list — matches your existing grid style */}
       {files.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {files.map((f, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 p-2 bg-pizzabi-card/20 rounded"
-            >
-              <div className="w-12 h-12 flex items-center justify-center bg-gray-800 rounded text-xs text-pizzabi-muted shrink-0">
-                CSV
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-pizzabi-gold truncate">
-                  {f.file.name}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-pizzabi-muted">
+            <span>Selected files</span>
+            <span>
+              {files.filter((item) => item.uploadStatus === "uploaded").length}/
+              {files.length} uploaded
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {files.map((f, i) => {
+              const uploadLabel =
+                f.uploadStatus === "uploading"
+                  ? "Uploading..."
+                  : f.uploadStatus === "uploaded"
+                    ? "Uploaded"
+                    : f.uploadStatus === "failed"
+                      ? "Failed"
+                      : "Queued"
+
+              const uploadClass =
+                f.uploadStatus === "uploaded"
+                  ? "bg-green-900/50 text-green-300"
+                  : f.uploadStatus === "uploading"
+                    ? "bg-blue-900/50 text-blue-300"
+                    : f.uploadStatus === "failed"
+                      ? "bg-red-900/50 text-red-300"
+                      : "bg-pizzabi-card/40 text-pizzabi-muted"
+
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 p-2 bg-pizzabi-card/20 rounded"
+                >
+                  <div className="w-12 h-12 flex items-center justify-center bg-gray-800 rounded text-xs text-pizzabi-muted shrink-0">
+                    CSV
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-pizzabi-gold truncate">
+                      {f.file.name}
+                    </div>
+                    <div className="text-xs text-pizzabi-muted">
+                      {(f.file.size / 1024).toFixed(1)} KB
+                    </div>
+                    <div
+                      className={`mt-1 inline-flex text-[10px] px-2 py-0.5 rounded ${uploadClass}`}
+                    >
+                      {uploadLabel}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(i)}
+                    className="p-1 text-pizzabi-gold hover:bg-pizzabi-card/40 rounded transition-colors shrink-0"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <div className="text-xs text-pizzabi-muted">
-                  {(f.file.size / 1024).toFixed(1)} KB
-                </div>
-              </div>
-              <button
-                onClick={() => handleRemove(i)}
-                className="p-1 text-pizzabi-gold hover:bg-pizzabi-card/40 rounded transition-colors shrink-0"
-                title="Remove"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

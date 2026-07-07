@@ -34,6 +34,15 @@ router.post("/confirm", async (req, res) => {
   }
 })
 
+router.post("/confirm-file", async (req, res) => {
+  try {
+    const result = await importFiles([req.body.confirmedFile])
+    res.json({ success: true, result: result[0] })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 /**
  * POST /api/csv/cancel
  * User dismissed the confirm dialog — clean up temp files.
