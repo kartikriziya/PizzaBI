@@ -4,16 +4,7 @@ import LoadingState from "./LoadingState"
 
 function InsightCard({ icon, title, value, description, color }) {
   return (
-    <div
-      className="rounded-2xl border p-4 shadow-sm transition-all duration-200 cursor-pointer"
-      style={{ background: "#1a1d27", borderColor: "#2a2d3a" }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "#f5a623"
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "#2a2d3a"
-      }}
-    >
+    <div className="rounded-2xl border border-pizzabi-muted/20 bg-pizzabi-card p-4 shadow-sm transition-all duration-200 cursor-pointer hover:border-pizzabi-gold/50">
       <div className="flex items-start gap-3">
         <div
           className={`flex h-12 w-12 items-center justify-center rounded-lg shrink-0 ${color}`}
@@ -23,7 +14,9 @@ function InsightCard({ icon, title, value, description, color }) {
 
         <div className="flex-1">
           <p className="text-xs text-pizzabi-muted font-medium">{title}</p>
-          <h3 className="text-base font-semibold text-white mt-1">{value}</h3>
+          <h3 className="text-base font-semibold text-pizzabi-foreground mt-1">
+            {value}
+          </h3>
           <p className="text-xs text-pizzabi-muted/70 mt-2">{description}</p>
         </div>
       </div>
@@ -114,10 +107,10 @@ export default function KeyInsights({ overviewData, loading, error }) {
   return (
     <div className="w-full">
       <div className="mb-4">
-        <h3 className="text-lg font-bold mb-1" style={{ color: "#f5a623" }}>
+        <h3 className="mb-1 text-lg font-bold text-pizzabi-gold">
           Key Insights
         </h3>
-        <p className="text-sm" style={{ color: "#6b7280" }}>
+        <p className="text-sm text-pizzabi-muted">
           Key performance metrics and business intelligence
         </p>
       </div>

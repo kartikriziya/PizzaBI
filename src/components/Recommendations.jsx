@@ -1,23 +1,21 @@
 import React from "react"
-import {
-  Utensils,
-  Award,
-  Crown,
-  Target,
-  Lightbulb,
-} from "lucide-react"
+import { Utensils, Award, Crown, Target, Lightbulb } from "lucide-react"
 
 function RecommendationCard({ icon, title, recommendation, reason, color }) {
   return (
     <div className="rounded-2xl border border-pizzabi-muted/20 bg-white/5 p-4 shadow-sm hover:border-pizzabi-muted/40 transition-all">
       <div className="flex items-start gap-3">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 ${color}`}>
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-full shrink-0 ${color}`}
+        >
           {icon}
         </div>
 
         <div className="flex-1">
           <p className="text-sm text-pizzabi-muted font-medium">{title}</p>
-          <h3 className="text-lg font-semibold text-white mt-1">{recommendation}</h3>
+          <h3 className="text-lg font-semibold text-white mt-1">
+            {recommendation}
+          </h3>
           <p className="text-xs text-pizzabi-muted/70 mt-2">{reason}</p>
         </div>
       </div>
@@ -31,7 +29,8 @@ export default function Recommendations() {
       icon: <Utensils className="h-6 w-6 text-pizzabi-gold" />,
       title: "Top Menu Item",
       recommendation: "Margherita Pizza",
-      reason: "Feature as best seller - highly profitable and customer favorite.",
+      reason:
+        "Feature as best seller - highly profitable and customer favorite.",
       color: "bg-pizzabi-gold/20",
     },
     {
@@ -45,14 +44,16 @@ export default function Recommendations() {
       icon: <Crown className="h-6 w-6 text-pizzabi-teal" />,
       title: "Regional Strategy",
       recommendation: "BBQ Chicken Focus",
-      reason: "Dominant in key markets - expand availability in Downtown & City Center.",
+      reason:
+        "Dominant in key markets - expand availability in Downtown & City Center.",
       color: "bg-pizzabi-teal/20",
     },
     {
       icon: <Target className="h-6 w-6 text-pizzabi-red" />,
       title: "Bundle Strategy",
       recommendation: "Large Size Combos",
-      reason: "Largest profit contributor - create combo deals for large pizzas.",
+      reason:
+        "Largest profit contributor - create combo deals for large pizzas.",
       color: "bg-pizzabi-red/20",
     },
     {

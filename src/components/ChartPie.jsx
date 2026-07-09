@@ -45,10 +45,18 @@ export default function ChartPie({ selectedFilters }) {
     loadData()
   }, [selectedFilters])
 
+  const getPercentage = (value) => {
+    if (!data || data.length === 0) return 0
+    const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0)
+    return total > 0 ? (Number(value || 0) / total) * 100 : 0
+  }
+
   return (
     <div className="bg-pizzabi-card border border-pizzabi-muted/20 rounded-xl p-5">
       <p className="text-pizzabi-muted text-xs mb-0.5">Sales by size</p>
-      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">Size distribution</h2>
+      <h2 className="text-pizzabi-gold font-medium text-lg mb-4">
+        Size distribution
+      </h2>
 
       <div className="flex flex-wrap gap-3 mb-3 text-xs text-pizzabi-muted">
         {data.map((d, i) => (
@@ -57,7 +65,7 @@ export default function ChartPie({ selectedFilters }) {
               className="w-2.5 h-2.5 rounded-sm inline-block"
               style={{ background: SIZE_COLORS[i] }}
             />
-            {d.name} {d.value}%
+            {d.name} {getPercentage(d.value).toFixed(0)}%
           </span>
         ))}
       </div>
@@ -70,32 +78,36 @@ export default function ChartPie({ selectedFilters }) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={65}
-              outerRadius={100}
-              paddingAngle={3}
-              dataKey="value"
-              labelLine={false}
-              label={CustomLabel}
-            >
-              {data.map((_, i) => (
-                <Cell
-                  key={i}
-                  fill={SIZE_COLORS[i]}
-                  fillOpacity={0.8}
-                  stroke={SIZE_COLORS[i]}
-                  strokeWidth={2}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              {...tooltipStyle}
-              formatter={(value) => [`${value}%`, "Share"]}
-            />
-          </PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={65}
+                outerRadius={100}
+                paddingAngle={3}
+                dataKey="value"
+                labelLine={false}
+                label={CustomLabel}
+              >
+                {data.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={SIZE_COLORS[i]}
+                    fillOpacity={0.8}
+                    stroke={SIZE_COLORS[i]}
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                {...tooltipStyle}
+                formatter={(value, name) => {
+                  // Calculate the percentage dynamically using your existing function
+                  const percentage = getPercentage(value).toFixed(0)
+                  return [`${percentage}%`, name || "Share"]
+                }}
+              />
+            </PieChart>
           </ResponsiveContainer>
         )}
       </div>
